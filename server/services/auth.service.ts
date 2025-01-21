@@ -7,8 +7,12 @@ import {
 import prisma from "../prisma";
 import CONFIG from "../utils/config";
 import crypto from "crypto";
+import EmailService from "../middlewears/email";
+import VerifyEmailTemplate from "../middlewears/email/VerifyEmailTemplate";
 
 class AuthService {
+	emailService = new EmailService();
+
 	async createUser({
 		email,
 		password,
@@ -39,8 +43,20 @@ class AuthService {
 				},
 			});
 
-			// sendMail to verify the code.
-			// Maybe store information about the user eg: IP...
+			if (CONFIG.env.SEND_EMAILS)
+				await this.emailService.sendEmail(
+					VerifyEmailTemplate({
+						user: { username: user.username, email: user.email },
+						code: verificationCode,
+						codeExpiresAt: user.verificationCodeExpiration!,
+					})
+				);
+			else
+				throw new InternalServerError(
+					"Emails are currently disabled, please contact an administrator."
+				);
+
+			// TODO: Maybe store information about the user eg: IP...
 		} catch (error: any) {
 			if (error.code && error.code === "P2002")
 				throw new BadrequestError("User already exists.");
@@ -75,11 +91,13 @@ class AuthService {
 			where: { email: email },
 		});
 
-		if (user.isDeleted)
+		if (user.isDeleted) {
 			throw new NotFoundError("User account has been deleted.");
+		}
 
-		if (!(await argon.verify(user.password, oldPassword)))
+		if (!(await argon.verify(user.password, oldPassword))) {
 			throw new BadrequestError("Invalid password provided.");
+		}
 
 		await prisma.user.update({
 			where: { email },
@@ -127,6 +145,19 @@ class AuthService {
 
 		const verificationCode = Math.floor(Math.random() * 10000);
 
+		if (CONFIG.env.SEND_EMAILS)
+			await this.emailService.sendEmail(
+				VerifyEmailTemplate({
+					user: { username: user.username, email: user.email },
+					code: verificationCode,
+					codeExpiresAt: user.verificationCodeExpiration!,
+				})
+			);
+		else
+			throw new InternalServerError(
+				"Emails are currently disabled, please contact an administrator."
+			);
+
 		await prisma.user.update({
 			where: { email },
 			data: {
@@ -163,7 +194,7 @@ class AuthService {
 		)
 			throw new BadrequestError("Verification Code expired");
 
-		prisma.user.update({
+		await prisma.user.update({
 			where: {
 				email,
 			},
@@ -173,6 +204,7 @@ class AuthService {
 				verificationCodeExpiration: null,
 			},
 		});
+
 		return;
 	}
 
@@ -219,6 +251,8 @@ class AuthService {
 				isDeleted: new Date(),
 			},
 		});
+
+		// send mail
 
 		return;
 	}

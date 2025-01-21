@@ -17,9 +17,13 @@ export const changePasswordSchema = Joi.object({
 });
 
 export const verifyUserSchema = Joi.object({
-	code: Joi.string().required(),
+	code: Joi.number().required(),
 });
 
 export const forgetPasswordSchema = Joi.object({
 	password: Joi.string().required(),
+});
+
+export const resendVerificationCodeSchema = Joi.object({
+	email: Joi.string().email().required(),
 });

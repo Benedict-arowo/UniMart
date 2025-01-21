@@ -5,6 +5,7 @@ const Wrapper = (fn: Function) => {
 		try {
 			await fn(req, res, next);
 		} catch (error: any) {
+			console.log("catching err");
 			next(error);
 		}
 	};

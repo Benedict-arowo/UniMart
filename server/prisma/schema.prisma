@@ -89,7 +89,7 @@ model User {
   payments      Payment[]
 
   isDeleted DateTime?
-  
+  isOnline Boolean @default(false)
   isVerified Boolean @default(false)
   verificationCode Int?
   verificationCodeExpiration DateTime?

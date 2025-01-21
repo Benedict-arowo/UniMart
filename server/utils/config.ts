@@ -18,6 +18,7 @@ const env = cleanEnv(process.env, {
 	MAIL_AUTH_PASSWORD: str(),
 	VERIFICATION_CODE_EXPIRATION: num({ default: 5 }), // In minutes
 	PASSWORD_CODE_EXPIRATION: num({ default: 5 }), // In minutes
+	SEND_EMAILS: bool({ default: true, devDefault: false }),
 });
 
 const CONFIG = {

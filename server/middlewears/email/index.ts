@@ -1,7 +1,7 @@
 import nodemailer, { Transporter } from "nodemailer";
 import CONFIG from "../../utils/config";
 
-interface EmailOptions {
+export interface EmailOptions {
 	to: string | string[]; // Recipient(s) email address
 	subject: string; // Email subject
 	text?: string; // Plain text body
@@ -46,4 +46,4 @@ class EmailService {
 	}
 }
 
-export default new EmailService();
+export default EmailService;
