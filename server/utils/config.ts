@@ -18,7 +18,13 @@ const env = cleanEnv(process.env, {
 	MAIL_AUTH_PASSWORD: str(),
 	VERIFICATION_CODE_EXPIRATION: num({ default: 5 }), // In minutes
 	PASSWORD_CODE_EXPIRATION: num({ default: 5 }), // In minutes
-	SEND_EMAILS: bool({ default: true, devDefault: false }),
+	SEND_EMAILS: bool({ default: true, devDefault: true }),
+	ACCESS_TOKEN: str({ default: "ace_token" }),
+	REFRESH_TOKEN: str({ default: "refr_token" }),
+	ACCESS_TOKEN_EXPIRATION: num({ default: 60 * 24 * 7 }), // 7 days In minutes
+	REFRESH_TOKEN_EXPIRATION: num({ default: 60 * 24 * 30 }), // 30 days In minutes
+	REFRESH_TOKEN_SECRET: str({}),
+	ACCESS_TOKEN_SECRET: str({}),
 });
 
 const CONFIG = {

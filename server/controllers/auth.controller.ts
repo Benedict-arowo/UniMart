@@ -12,6 +12,7 @@ import {
 import { Request, Response } from "express";
 import Wrapper from "../middlewears/Wrapper";
 import { BadrequestError } from "../middlewears/error";
+import CONFIG from "../utils/config";
 
 class AuthController {
 	service = new AuthService();
@@ -26,11 +27,26 @@ class AuthController {
 	login = Wrapper(async (req: Request, res: Response) => {
 		validate(req.body, loginSchema);
 
-		const user = await this.service.loginUser(req.body);
-		const access_token = "";
+		const { access_token, refresh_token, user } =
+			await this.service.loginUser(req.body);
+
+		res.cookie(CONFIG.env.ACCESS_TOKEN, access_token, {
+			httpOnly: true,
+			sameSite: "none",
+			secure: CONFIG.env.NODE_ENV === "production",
+			expires: new Date(CONFIG.env.ACCESS_TOKEN_EXPIRATION * 60 * 1000), // Coverts minutes to milliseconds
+		});
+
+		res.cookie(CONFIG.env.REFRESH_TOKEN, refresh_token, {
+			httpOnly: true,
+			sameSite: "none",
+			secure: CONFIG.env.NODE_ENV === "production",
+			expires: new Date(CONFIG.env.REFRESH_TOKEN_EXPIRATION * 60 * 1000), // Coverts minutes to milliseconds
+		});
+
 		return res
 			.status(StatusCodes.OK)
-			.json({ success: true, data: { user, access_token } });
+			.json({ success: true, data: { user } });
 	});
 
 	changePassword = Wrapper(async (req: Request, res: Response) => {
@@ -40,7 +56,7 @@ class AuthController {
 		} = req;
 
 		await this.service.changePassword({
-			email: "test1@gmail.com",
+			email,
 			...req.body,
 		});
 
@@ -67,7 +83,6 @@ class AuthController {
 	verifyUser = Wrapper(async (req: Request, res: Response) => {
 		validate(req.body, verifyUserSchema);
 		await this.service.verifyUser({
-			email: "test1@gmail.com",
 			...req.body,
 		});
 		return res.status(StatusCodes.OK).json({ success: true });
@@ -82,11 +97,12 @@ class AuthController {
 	});
 
 	deleteAccount = Wrapper(async (req: Request, res: Response) => {
+		validate(req.body, loginSchema);
 		const {
-			body: { email },
+			body: { email, password },
 		} = req;
-		await this.service.deleteAccount(email);
-		return res.status(StatusCodes.NO_CONTENT);
+		await this.service.deleteAccount(email, password);
+		return res.status(StatusCodes.NO_CONTENT).json();
 	});
 }
 

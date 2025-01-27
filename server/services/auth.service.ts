@@ -9,6 +9,9 @@ import CONFIG from "../utils/config";
 import crypto from "crypto";
 import EmailService from "../middlewears/email";
 import VerifyEmailTemplate from "../middlewears/email/VerifyEmailTemplate";
+import { User } from "@prisma/client";
+import jwt from "jsonwebtoken";
+import { RefineUser } from "../middlewears/validator/auth.validator";
 
 class AuthService {
 	emailService = new EmailService();
@@ -75,7 +78,32 @@ class AuthService {
 		if (!(await argon.verify(user.password, password)))
 			throw new BadrequestError("Invalid password provided.");
 
-		return;
+		const access_token = this.generateToken(user, "ACCESS");
+		const refresh_token = this.generateToken(user, "REFRESH");
+		return { access_token, refresh_token, user: RefineUser(user) };
+	}
+
+	generateToken(user: User, type: "REFRESH" | "ACCESS") {
+		const secret =
+			type === "REFRESH"
+				? CONFIG.env.REFRESH_TOKEN_SECRET
+				: CONFIG.env.ACCESS_TOKEN_SECRET;
+		const expiresIn =
+			type === "REFRESH"
+				? CONFIG.env.REFRESH_TOKEN_EXPIRATION
+				: CONFIG.env.ACCESS_TOKEN_EXPIRATION;
+
+		const payload = {
+			id: user.id,
+			email: user.email,
+			roles: user.roles,
+		};
+
+		const token = jwt.sign(payload, secret, {
+			expiresIn,
+		});
+
+		return token;
 	}
 
 	async changePassword({
@@ -145,31 +173,33 @@ class AuthService {
 
 		const verificationCode = Math.floor(Math.random() * 10000);
 
-		if (CONFIG.env.SEND_EMAILS)
+		if (CONFIG.env.SEND_EMAILS) {
+			const verificationCodeExpiration = new Date(
+				new Date().setMinutes(
+					CONFIG.env.VERIFICATION_CODE_EXPIRATION +
+						new Date().getMinutes()
+				)
+			);
+
+			await prisma.user.update({
+				where: { email },
+				data: {
+					verificationCode,
+					verificationCodeExpiration,
+				},
+			});
+
 			await this.emailService.sendEmail(
 				VerifyEmailTemplate({
 					user: { username: user.username, email: user.email },
 					code: verificationCode,
-					codeExpiresAt: user.verificationCodeExpiration!,
+					codeExpiresAt: verificationCodeExpiration,
 				})
 			);
-		else
+		} else
 			throw new InternalServerError(
 				"Emails are currently disabled, please contact an administrator."
 			);
-
-		await prisma.user.update({
-			where: { email },
-			data: {
-				verificationCode,
-				verificationCodeExpiration: new Date(
-					new Date().setMinutes(
-						CONFIG.env.VERIFICATION_CODE_EXPIRATION +
-							new Date().getMinutes()
-					)
-				),
-			},
-		});
 	}
 
 	async verifyUser({ email, code }: { email: string; code: number }) {
@@ -244,7 +274,15 @@ class AuthService {
 		});
 	}
 
-	async deleteAccount(email: string) {
+	async deleteAccount(email: string, password: string) {
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+
+		if (user.isDeleted)
+			throw new NotFoundError("User account has been deleted.");
+
+		if (!(await argon.verify(user.password, password)))
+			throw new BadrequestError("Invalid password provided.");
+
 		await prisma.user.update({
 			where: { email },
 			data: {
@@ -252,7 +290,7 @@ class AuthService {
 			},
 		});
 
-		// send mail
+		// send mail (30d before its fully deleted)
 
 		return;
 	}
