@@ -11,7 +11,6 @@ import {
 } from "../middlewears/validator/auth.validator";
 import { Request, Response } from "express";
 import Wrapper from "../middlewears/Wrapper";
-import { BadrequestError } from "../middlewears/error";
 import CONFIG from "../utils/config";
 
 class AuthController {
