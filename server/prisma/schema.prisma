@@ -70,9 +70,9 @@ model User {
   id       String @id @default(uuid())
   username String
 
-  email    String    @unique
+  email    String @unique
   password String
-  wishlist Wishlist[]
+  // wishlist Product[] @relation("UserWishlist")
 
   lastOnline    DateTime?
   roles         Role[]
@@ -86,16 +86,16 @@ model User {
   messages      Message[]      @relation("UserMessages")
   chats         Chat[]         @relation("ChatParticipants")
   ads           Ad[]
-  products      Product[]
+  products      Product[]      @relation("UserProducts")
   payments      Payment[]
 
-  isDeleted DateTime?
-  isOnline Boolean @default(false)
-  isVerified Boolean @default(false)
-  verificationCode Int?
+  isDeleted                  DateTime?
+  isOnline                   Boolean   @default(false)
+  isVerified                 Boolean   @default(false)
+  verificationCode           Int?
   verificationCodeExpiration DateTime?
 
-  resetPasswordToken        String?    
+  resetPasswordToken        String?
   resetPasswordTokenExpires DateTime?
 
   createdAt DateTime @default(now())
@@ -153,14 +153,14 @@ model Subscription {
   userId String
 }
 
-model Wishlist {
-  id    String @id @default(uuid())
-  owner User   @relation(fields: [ownerId], references: [id])
+// model Wishlist {
+//   id    String @id @default(uuid())
+//   owner User   @relation(fields: [ownerId], references: [id])
 
-  products Product[] @relation("WishlistProducts")
+//   products Product[] @relation("WishlistProducts")
 
-  ownerId String @unique
-}
+//   ownerId String @unique
+// }
 
 model Product {
   id String @id @default(uuid())
@@ -172,7 +172,7 @@ model Product {
   price           Float
   discountedPrice Float
   store           Store @relation(fields: [storeId], references: [id])
-  owner           User  @relation(fields: [ownerId], references: [id])
+  owner           User  @relation("UserProducts", fields: [ownerId], references: [id])
 
   isActive Boolean
 
@@ -180,13 +180,12 @@ model Product {
   boostedAt      DateTime?
   boostExpiresAt DateTime?
 
-  category  Category[]
-  likes     User[]     @relation("UserLikes")
-  reviews   Review[]
-  media     Media[]
-  wishlists Wishlist[] @relation("WishlistProducts")
-  reports   Report[]
-  payments  Payment[]
+  category Category[]
+  likes    User[]     @relation("UserLikes")
+  reviews  Review[]
+  media    Media[]
+  reports  Report[]
+  payments Payment[]
 
   storeId String
   ownerId String
@@ -289,7 +288,7 @@ model Report {
   targetProduct Product?     @relation(fields: [targetProductId], references: [id])
   type          ReportType
   reason        String
-  status        ReportStatus @default(PENDING) 
+  status        ReportStatus @default(PENDING)
   createdAt     DateTime     @default(now())
 
   reporterId      String

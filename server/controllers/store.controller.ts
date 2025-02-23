@@ -25,9 +25,7 @@ class StoreController {
 			user,
 		});
 
-		return res
-			.status(StatusCodes.OK)
-			.json({ success: true, data: { stores } });
+		return res.status(StatusCodes.OK).json({ success: true, data: stores });
 	};
 
 	getStore = async (req: Req, res: Response) => {
@@ -45,7 +43,7 @@ class StoreController {
 		);
 		return res
 			.status(StatusCodes.CREATED)
-			.json({ success: true, data: { store } });
+			.json({ success: true, data: store });
 	};
 
 	updateStore = async (req: Req, res: Response) => {
@@ -55,9 +53,7 @@ class StoreController {
 			req.body as IStore,
 			req.user
 		);
-		return res
-			.status(StatusCodes.OK)
-			.json({ success: true, data: { store } });
+		return res.status(StatusCodes.OK).json({ success: true, data: store });
 	};
 
 	deleteStore = async (req: Req, res: Response) => {
