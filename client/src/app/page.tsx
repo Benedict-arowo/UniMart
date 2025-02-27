@@ -5,11 +5,12 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { AdBanner } from "./components/AdBanner";
+import { AdBanner } from "./components/ads/AdBanner";
 import { useInView } from "react-intersection-observer";
 import { ProductCard } from "./components/ProductCard";
 import { SearchFilters } from "./components/SearchFilters";
 import { ProductCardSkeleton } from "./components/ProductCardSkeleton";
+import { AdSpot } from "./components/ads/AdSpot";
 
 interface Product {
 	id: number;
@@ -156,7 +157,7 @@ export default function Home() {
 		if (inView) {
 			loadMore();
 		}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [inView]);
 
 	const loadMore = async () => {
@@ -294,6 +295,12 @@ export default function Home() {
 							))}
 						</div>
 					</section>
+
+					<AdSpot
+						style="banner"
+						className="w-full"
+						adSlot="home-horizontal-1"
+					/>
 				</div>
 			</div>
 		</div>

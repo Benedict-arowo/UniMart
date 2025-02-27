@@ -22,6 +22,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/app/components/ProductCard";
 import { SellerRating } from "@/app/components/SellerRating";
+import { AdSpot } from "@/app/components/ads/AdSpot";
 
 interface Product {
 	id: number;
@@ -139,7 +140,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			setShowRating(true);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [params.id]);
+	}, [product, product?.sellerId]);
 
 	const nextMedia = () => {
 		if (product)
@@ -281,6 +282,14 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 						</Button>
 					</CardFooter>
 				</Card>
+			</div>
+
+			<div className="my-12">
+				<AdSpot
+					style="banner"
+					className="w-full"
+					adSlot="product-horizontal-1"
+				/>
 			</div>
 
 			<div className="mt-12">
