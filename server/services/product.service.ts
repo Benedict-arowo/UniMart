@@ -1,3 +1,4 @@
+import { upload } from "../middlewears/cloudinary";
 import { BadrequestError, NotFoundError } from "../middlewears/error";
 import prisma from "../prisma";
 import { Req } from "../utils/types";
@@ -61,7 +62,13 @@ class ProductService {
 		return product;
 	};
 
-	createProduct = async (data: any, user: Req["user"]) => {
+	createProduct = async (
+		data: any,
+		user: Req["user"],
+		files: Express.Multer.File[]
+	) => {
+		const uploaded_files = upload(files);
+		console.log(uploaded_files)
 		const product = await prisma.product.create({
 			data: data,
 		});

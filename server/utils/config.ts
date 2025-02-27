@@ -25,6 +25,9 @@ const env = cleanEnv(process.env, {
 	REFRESH_TOKEN_EXPIRATION: num({ default: 60 * 24 * 30 }), // 30 days In minutes
 	REFRESH_TOKEN_SECRET: str({}),
 	ACCESS_TOKEN_SECRET: str({}),
+	CLOUDINARY_CLOUD_NAME: str(),
+	CLOUDINARY_API_KEY: str(),
+	CLOUDINARY_API_SECRET: str(),
 });
 
 const CONFIG = {

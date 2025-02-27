@@ -139,6 +139,7 @@ model Plan {
   durationInDays Int
   amount         Float
   createdAt      DateTime @default(now())
+  active Boolean
 
   subscriptions Subscription[]
 }

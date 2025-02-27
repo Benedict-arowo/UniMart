@@ -33,9 +33,11 @@ class ProductController {
 
 	createProduct = async (req: Req, res: Response) => {
 		validator(req.body, createProductSchema);
+
 		const product = await this.service.createProduct(
 			req.body as IProduct,
-			req.user
+			req.user,
+			req.files as Express.Multer.File[]
 		);
 		return res
 			.status(StatusCodes.CREATED)
