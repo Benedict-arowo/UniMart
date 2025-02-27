@@ -14,7 +14,6 @@ import {
 	ShieldAlert,
 	CreditCard,
 	UserCog,
-	Palette,
 } from "lucide-react";
 
 const sidebarItems = [

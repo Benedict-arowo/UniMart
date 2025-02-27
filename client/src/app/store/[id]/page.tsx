@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { ProductCard } from "@/app/components/ProductCard";
+import Image from "next/image";
 
 interface Product {
 	id: number;
@@ -58,8 +59,8 @@ const products: Product[] = [
 ];
 
 export default function StorePage({ params }: { params: { id: string } }) {
-	const [storeData, setStoreData] = useState<Store>(store);
-	const [storeProducts, setStoreProducts] = useState<Product[]>(products);
+	const [storeData, _setStoreData] = useState<Store>(store);
+	const [storeProducts, _setStoreProducts] = useState<Product[]>(products);
 	const [searchTerm, setSearchTerm] = useState("");
 
 	useEffect(() => {
@@ -74,7 +75,7 @@ export default function StorePage({ params }: { params: { id: string } }) {
 	return (
 		<div>
 			<header className="relative">
-				<img
+				<Image
 					src={storeData.bannerImage}
 					alt={storeData.name}
 					className="w-full h-[300px] object-cover"

@@ -64,7 +64,8 @@ export default function MessagesPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isLoading, setIsLoading] = useState(true);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const [availableVendors, setAvailableVendors] = useState<Vendor[]>(vendors);
+	const [availableVendors, _setAvailableVendors] =
+		useState<Vendor[]>(vendors);
 
 	useEffect(() => {
 		// Simulate loading delay

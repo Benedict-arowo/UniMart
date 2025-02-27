@@ -50,7 +50,7 @@ export default function ContactPage() {
 			setEmail("");
 			setSubject("");
 			setMessage("");
-		} catch (error) {
+		} catch {
 			toast({
 				title: "Error sending message",
 				description: "Please try again later.",

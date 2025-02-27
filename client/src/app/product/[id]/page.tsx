@@ -138,20 +138,23 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 		) {
 			setShowRating(true);
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [params.id]);
 
 	const nextMedia = () => {
-		setCurrentMediaIndex(
-			(prevIndex) => (prevIndex + 1) % product?.media.length!
-		);
+		if (product)
+			setCurrentMediaIndex(
+				(prevIndex) => (prevIndex + 1) % product.media.length!
+			);
 	};
 
 	const prevMedia = () => {
-		setCurrentMediaIndex(
-			(prevIndex) =>
-				(prevIndex - 1 + product?.media.length!) %
-				product?.media.length!
-		);
+		if (product)
+			setCurrentMediaIndex(
+				(prevIndex) =>
+					(prevIndex - 1 + product.media.length!) %
+					product?.media.length!
+			);
 	};
 
 	const handleCommentSubmit = (e: React.FormEvent) => {

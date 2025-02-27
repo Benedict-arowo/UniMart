@@ -83,12 +83,26 @@ export function Notification() {
 	);
 }
 
+interface Notification {
+	id: number;
+	message: string;
+	timestamp: Date;
+	read: boolean;
+}
+
+interface NotificationListProps {
+	notifications: Notification[];
+	markAsRead: (id: number) => void;
+	clearNotification: (id: number) => void;
+	formatTimestamp: (date: Date) => string;
+}
+
 function NotificationList({
 	notifications,
 	markAsRead,
 	clearNotification,
 	formatTimestamp,
-}) {
+}: NotificationListProps) {
 	return (
 		<ScrollArea className="h-[300px]">
 			{notifications.length === 0 ? (

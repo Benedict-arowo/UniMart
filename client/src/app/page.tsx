@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-	Card,
-	CardContent,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { AdBanner } from "./components/AdBanner";
@@ -144,7 +138,7 @@ export default function Home() {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [page, setPage] = useState(1);
-	const [filters, setFilters] = useState({});
+	const [_filters, setFilters] = useState({});
 	const { ref, inView } = useInView();
 
 	useEffect(() => {
@@ -162,6 +156,7 @@ export default function Home() {
 		if (inView) {
 			loadMore();
 		}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [inView]);
 
 	const loadMore = async () => {

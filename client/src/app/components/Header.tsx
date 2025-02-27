@@ -1,15 +1,8 @@
+"use client";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-	Heart,
-	MessageCircle,
-	User,
-	Search,
-	Book,
-	Laptop,
-	ShoppingBag,
-} from "lucide-react";
+import { Heart, MessageCircle, User, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -24,12 +17,14 @@ import { Notification } from "./Notification";
 
 export default function Header() {
 	// const { user, logout } = useAuth();
-	const user = null;
-	// {
-	//   name: "John Doe",
-	//   email: "john@gmail.com"
-	// }
+	const user = {
+		name: "John Doe",
+		email: "john@gmail.com",
+	};
 
+	const logout = () => {
+		console.log("Logging out");
+	};
 	return (
 		<header className="bg-white border-b border-gray-200 sticky top-0 z-50">
 			<div className="container mx-auto px-4 py-3">
