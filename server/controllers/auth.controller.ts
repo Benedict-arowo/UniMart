@@ -32,15 +32,20 @@ class AuthController {
 		res.cookie(CONFIG.env.ACCESS_TOKEN, access_token, {
 			httpOnly: true,
 			sameSite: "none",
-			secure: CONFIG.env.NODE_ENV === "production",
-			expires: new Date(CONFIG.env.ACCESS_TOKEN_EXPIRATION * 60 * 1000), // Coverts minutes to milliseconds
+			secure: CONFIG.env.NODE_ENV === "production" ? true : false,
+			expires: new Date(
+				Date.now() + CONFIG.env.ACCESS_TOKEN_EXPIRATION * 60 * 1000
+			), // Coverts minutes to milliseconds
 		});
 
 		res.cookie(CONFIG.env.REFRESH_TOKEN, refresh_token, {
 			httpOnly: true,
 			sameSite: "none",
-			secure: CONFIG.env.NODE_ENV === "production",
-			expires: new Date(CONFIG.env.REFRESH_TOKEN_EXPIRATION * 60 * 1000), // Coverts minutes to milliseconds
+			secure: CONFIG.env.NODE_ENV === "production" ? true : false,
+			// expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+			expires: new Date(
+				Date.now() + CONFIG.env.REFRESH_TOKEN_EXPIRATION * 60 * 1000
+			), // Coverts minutes to milliseconds
 		});
 
 		return res

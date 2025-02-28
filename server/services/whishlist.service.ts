@@ -5,17 +5,16 @@ class WishlistService {
 		userId: string,
 		filters: { limit: number; page: number }
 	) => {
-		const user = await prisma.user.findUniqueOrThrow({
-			where: { id: userId },
-			select: {
-				wishlist: {
-					skip: filters.page * filters.limit,
-					take: filters.limit,
-				},
-			},
-		});
-
-		return user.wishlist;
+		// const user = await prisma.user.findUniqueOrThrow({
+		// 	where: { id: userId },
+		// 	select: {
+		// 		wishlist: {
+		// 			skip: filters.page * filters.limit,
+		// 			take: filters.limit,
+		// 		},
+		// 	},
+		// });
+		// return user.wishlist;
 	};
 
 	addItem = async (userId: string, productId: string) => {

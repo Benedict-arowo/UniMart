@@ -150,6 +150,11 @@ model Subscription {
   user User @relation(fields: [userId], references: [id])
   plan Plan @relation(fields: [planId], references: [id])
 
+  created DateTime @default(now())
+  expires DateTime? 
+  isActive Boolean @default(true)
+  payments Payment[]
+
   planId String
   userId String
 }
@@ -273,9 +278,11 @@ model Payment {
   adId          String?
   boostedPostId String?
   productId     String?
+  subscriptionId String?
 
   ad      Ad?      @relation(fields: [adId], references: [id])
   product Product? @relation(fields: [productId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
 
   user   User   @relation(fields: [userId], references: [id])
   userId String
