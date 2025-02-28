@@ -13,6 +13,24 @@ export const metadata: Metadata = {
 	description: "Connect with student sellers in your university",
 };
 
+// export default function RootLayout({
+// 	children,
+// }: {
+// 	children: React.ReactNode;
+// }) {
+// 	return (
+// 		<html lang="en">
+// 			<body className={inter.className}>
+// 				<AuthProvider>
+// 					<Header />
+// 					<main className="min-h-screen">{children}</main>
+// 					<Footer />
+// 					<Chat />
+// 				</AuthProvider>
+// 			</body>
+// 		</html>
+// 	);
+// }
 export default function RootLayout({
 	children,
 }: {
@@ -22,6 +40,7 @@ export default function RootLayout({
 		<html lang="en">
 			<body className={inter.className}>
 				<AuthProvider>
+					{/* Now Header has access to Auth Context */}
 					<Header />
 					<main className="min-h-screen">{children}</main>
 					<Footer />

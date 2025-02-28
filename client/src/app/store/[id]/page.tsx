@@ -78,6 +78,7 @@ export default function StorePage({ params }: { params: { id: string } }) {
 				<Image
 					src={storeData.bannerImage}
 					alt={storeData.name}
+					fill
 					className="w-full h-[300px] object-cover"
 				/>
 				<div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">

@@ -11,14 +11,8 @@ import { ProductCard } from "./components/ProductCard";
 import { SearchFilters } from "./components/SearchFilters";
 import { ProductCardSkeleton } from "./components/ProductCardSkeleton";
 import { AdSpot } from "./components/ads/AdSpot";
-
-interface Product {
-	id: number;
-	name: string;
-	price: number;
-	discountedPrice?: number;
-	image: string;
-}
+import { getProducts } from "@/services/product";
+import { Product } from "./product/[id]/page";
 
 const allProducts: Product[] = [
 	{
@@ -114,47 +108,39 @@ const featuredProducts: Product[] = [
 	},
 ];
 
-const recentlyViewedProducts: Product[] = [
-	{
-		id: 10,
-		name: "Coffee Maker",
-		price: 35,
-		image: "images/placeholder.svg",
-	},
-	{
-		id: 11,
-		name: "Portable Charger",
-		price: 20,
-		image: "images/placeholder.svg",
-	},
-	{
-		id: 12,
-		name: "Wireless Keyboard",
-		price: 45,
-		image: "images/placeholder.svg",
-	},
-];
-
 export default function Home() {
 	const [products, setProducts] = useState<Product[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [page, setPage] = useState(1);
 	const [_filters, setFilters] = useState({});
 	const { ref, inView } = useInView();
+	const [recentlyViewedProducts, setRecentlyViewedProducts] = useState([]);
 
 	useEffect(() => {
 		const fetchProducts = async () => {
-			setIsLoading(true);
-			// Simulate API call
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-			setProducts(allProducts.slice(0, 6));
-			setIsLoading(false);
+			try {
+				setIsLoading(true);
+				const response = await getProducts(9, 1);
+				if (!response.success)
+					throw new Error("Failed to get products.");
+				setProducts(response.data.products);
+			} catch (error) {
+				console.error("Error fetching products:", error);
+			} finally {
+				setIsLoading(false);
+			}
 		};
+
+		const recentlyViewedProducts = JSON.parse(
+			localStorage.getItem("recently_viewed") || "[]"
+		);
+		setRecentlyViewedProducts(() => recentlyViewedProducts);
 		fetchProducts();
 	}, []);
 
 	useEffect(() => {
 		if (inView) {
+			console.log("Loading");
 			loadMore();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps

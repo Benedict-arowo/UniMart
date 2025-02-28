@@ -1,4 +1,4 @@
-import { upload } from "../middlewears/cloudinary";
+import { cropUpload, optimizeUpload, upload } from "../middlewears/cloudinary";
 import { BadrequestError, NotFoundError } from "../middlewears/error";
 import prisma from "../prisma";
 import { Req } from "../utils/types";
@@ -13,41 +13,47 @@ class ProductService {
 	}: IGetProducts) => {
 		const products = await prisma.product.findMany({
 			where: {
-				OR: [
-					{
-						name: {
-							contains: search,
-							mode: "insensitive",
-						},
-					},
-					{
-						description: {
-							contains: search,
-							mode: "insensitive",
-						},
-					},
-					{
-						category: {
-							some: {
-								name: {
-									startsWith: search,
-									mode: "insensitive",
-								},
-							},
-						},
-					},
-					{
-						store: {
-							name: {
-								contains: storeName,
-							},
-						},
-					},
-				],
+				// OR: [
+				// 	{
+				// 		name: {
+				// 			contains: search,
+				// 			mode: "insensitive",
+				// 		},
+				// 	},
+				// 	{
+				// 		description: {
+				// 			contains: search,
+				// 			mode: "insensitive",
+				// 		},
+				// 	},
+				// 	{
+				// 		category: {
+				// 			some: {
+				// 				name: {
+				// 					startsWith: search,
+				// 					mode: "insensitive",
+				// 				},
+				// 			},
+				// 		},
+				// 	},
+				// 	{
+				// 		store: {
+				// 			name: {
+				// 				contains: storeName,
+				// 			},
+				// 		},
+				// 	},
+				// ],
 			},
 			take: limit,
 			skip: (page - 1) * limit,
+			include: {
+				media: true,
+				category: true,
+			},
 		});
+
+		console.log(limit, page, products);
 
 		return products;
 	};
@@ -56,6 +62,10 @@ class ProductService {
 		const product = await prisma.product.findUnique({
 			where: {
 				id,
+			},
+			include: {
+				media: true,
+				category: true,
 			},
 		});
 
@@ -67,13 +77,66 @@ class ProductService {
 		user: Req["user"],
 		files: Express.Multer.File[]
 	) => {
-		const uploaded_files = upload(files);
-		console.log(uploaded_files)
-		const product = await prisma.product.create({
-			data: data,
-		});
+		try {
+			// Process category connections
+			let categoryConnections = null;
+			if (data.categoryIds) {
+				categoryConnections = data.categoryIds.map(
+					(categoryName: string) => ({
+						where: { name: categoryName },
+						create: { name: categoryName },
+					})
+				);
+			}
 
-		return product;
+			const uploadedFiles = (await upload(files)) as {
+				url: string;
+				format: string;
+				resource_type: string;
+				public_id: string;
+			}[];
+
+			uploadedFiles.forEach((file) => {
+				optimizeUpload(file.public_id);
+				cropUpload(file.public_id);
+			});
+			console.log(uploadedFiles);
+
+			// Create the product
+			const product = await prisma.product.create({
+				data: {
+					name: data.name,
+					description: data.description,
+					quantity: Number(data.quantity),
+					price: Number(data.price),
+					media: {
+						createMany: {
+							data: uploadedFiles.map((file) => ({
+								url: file.url,
+								type:
+									file.resource_type === "image"
+										? "IMAGE"
+										: "VIDEO",
+								public_id: file.public_id,
+							})),
+						},
+					},
+					// addToStore: data.addToStore as Boolean,
+					isActive: false, //TODO: make it so it's toggleable upon creation.
+					ownerId: user.id,
+					category: data.categoryIds
+						? {
+								connectOrCreate: categoryConnections,
+						  }
+						: undefined,
+				},
+			});
+
+			return product;
+		} catch (error) {
+			console.error("Error creating product:", error);
+			throw new Error("Failed to create product.");
+		}
 	};
 
 	updateProduct = async (id: string, data: any, user: Req["user"]) => {

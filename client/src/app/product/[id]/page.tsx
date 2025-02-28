@@ -23,37 +23,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/app/components/ProductCard";
 import { SellerRating } from "@/app/components/SellerRating";
 import { AdSpot } from "@/app/components/ads/AdSpot";
+import { getProduct } from "@/services/product";
+import { useRouter } from "next/navigation";
 
-interface Product {
+export interface Product {
 	id: number;
 	name: string;
 	price: number;
-	media: { type: "image" | "video"; url: string }[];
+	media: {
+		id: string;
+		url: string;
+		type: "IMAGE";
+		public_id: string;
+		productId: string;
+		createdAt: Date;
+	}[];
 	description: string;
+	discountedPrice?: number;
 	seller: string;
 	sellerId: number;
 	condition: string;
 	rating: number;
 	category: string;
 }
-
-const productData: Product = {
-	id: 1,
-	name: "Textbook: Introduction to Computer Science",
-	price: 50,
-	media: [
-		{ type: "image", url: "/images/placeholder.svg" },
-		{ type: "image", url: "/images/placeholder.svg" },
-		// { type: "video", url: "https://example.com/sample-video.mp4" },
-	],
-	description:
-		"A comprehensive textbook covering the fundamentals of computer science. Perfect for first-year students.",
-	seller: "John Doe",
-	sellerId: 101,
-	condition: "Like New",
-	rating: 4.5,
-	category: "Textbooks",
-};
 
 const comments = [
 	{
@@ -76,7 +68,7 @@ const similarProducts: Product[] = [
 		id: 2,
 		name: "Textbook: Calculus I",
 		price: 45,
-		media: [{ type: "image", url: "/images/placeholder.svg" }],
+		media: [],
 		description: "",
 		seller: "Jane Smith",
 		sellerId: 102,
@@ -88,7 +80,7 @@ const similarProducts: Product[] = [
 		id: 3,
 		name: "Textbook: Introduction to Psychology",
 		price: 40,
-		media: [{ type: "image", url: "/images/placeholder.svg" }],
+		media: [],
 		description: "",
 		seller: "John Doe",
 		sellerId: 101,
@@ -103,31 +95,43 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 	const [newComment, setNewComment] = useState("");
-	const [userHistory, setUserHistory] = useState<Product[]>([]);
+	const [recentlyViewedProducts, setRecentlyViewedProducts] = useState([]);
 	const [showRating, setShowRating] = useState(false);
+	const router = useRouter();
+
+	useEffect(() => {
+		if (!product) return;
+
+		console.log(product.id);
+
+		const recentlyViewed = JSON.parse(
+			localStorage.getItem("recently_viewed") || "[]"
+		) as Product[];
+
+		setRecentlyViewedProducts(() => recentlyViewed);
+
+		// Check if product already exists in the list
+		const exists = recentlyViewed.some((p) => p.id === product.id);
+		if (!exists) {
+			const updatedProducts = [product, ...recentlyViewed.slice(0, 8)]; // Keep max 9 items
+
+			localStorage.setItem(
+				"recently_viewed",
+				JSON.stringify(updatedProducts)
+			);
+		}
+	}, [product]);
 
 	useEffect(() => {
 		const fetchProduct = async () => {
 			setIsLoading(true);
-			// Simulate API call
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-			setProduct(productData);
+			const response = await getProduct(params.id);
+			if (!response.success) throw new Error("Failed to get product.");
+			setProduct(response.data.product);
 			setIsLoading(false);
 		};
+
 		fetchProduct();
-
-		// Fetch user history from localStorage
-		const history = JSON.parse(localStorage.getItem("userHistory") || "[]");
-		setUserHistory(history);
-
-		// Add current product to user history
-		if (product) {
-			const updatedHistory = [
-				product,
-				...history.filter((item: Product) => item.id !== product.id),
-			].slice(0, 5);
-			localStorage.setItem("userHistory", JSON.stringify(updatedHistory));
-		}
 
 		// Check if 24 hours have passed since first contact (simulated here)
 		const contactTime = localStorage.getItem(
@@ -140,7 +144,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			setShowRating(true);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [product, product?.sellerId]);
+	}, []);
 
 	const nextMedia = () => {
 		if (product)
@@ -196,27 +200,33 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 	}
 
 	if (!product) {
-		return <div>Product not found</div>;
+		return router.push("/404");
 	}
 
 	return (
 		<div className="container mx-auto px-4 py-8">
 			<div className="grid md:grid-cols-2 gap-8">
 				<div className="relative bg-white p-4 rounded-lg shadow-md">
-					{product.media[currentMediaIndex].type === "image" ? (
+					{product.media &&
+					product.media[currentMediaIndex].type === "IMAGE" ? (
 						<Image
 							src={
-								product.media[currentMediaIndex].url ||
+								(product.media &&
+									product.media[currentMediaIndex].url) ||
 								"/images/placeholder.svg"
 							}
 							alt={product.name}
+							unoptimized
 							width={400}
 							height={400}
 							className="w-full h-auto"
 						/>
 					) : (
 						<video
-							src={product.media[currentMediaIndex].url}
+							src={
+								product.media &&
+								product.media[currentMediaIndex].url
+							}
 							controls
 							className="w-full h-auto"
 						/>
@@ -334,7 +344,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			<div className="mt-12">
 				<h2 className="text-2xl font-bold mb-4">Recently Viewed</h2>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{userHistory.map((item) => (
+					{recentlyViewedProducts.map((item) => (
 						<ProductCard key={item.id} product={item} />
 					))}
 				</div>

@@ -176,11 +176,11 @@ model Product {
   quantity    Int
 
   price           Float
-  discountedPrice Float
-  store           Store @relation(fields: [storeId], references: [id])
+  discountedPrice Float?
+  store           Store? @relation(fields: [storeId], references: [id])
   owner           User  @relation("UserProducts", fields: [ownerId], references: [id])
 
-  isActive Boolean
+  isActive Boolean @default(false)
 
   isBoosted      Boolean?
   boostedAt      DateTime?
@@ -189,11 +189,11 @@ model Product {
   category Category[]
   likes    User[]     @relation("UserLikes")
   reviews  Review[]
-  media    Media[]
+  media    Media[] 
   reports  Report[]
   payments Payment[]
 
-  storeId String
+  storeId String?
   ownerId String
 }
 
@@ -207,6 +207,7 @@ model Media {
   id      String    @id @default(uuid())
   url     String
   type    MediaType
+  public_id String?
   product Product   @relation(fields: [productId], references: [id])
 
   productId String

@@ -29,16 +29,38 @@ const generateUniqueId = (): string => {
 };
 
 export const upload = async (files: Express.Multer.File[]) => {
+	if (!files || files.length === 0) return undefined;
+
 	const uploadResults = await Promise.all(
-		files.map(async (file) => {
-			const tempPath = `./uploads/${Date.now()}-${file.originalname}`;
-			fs.writeFileSync(tempPath, file.buffer);
-			const result = await cloudinary.uploader.upload(tempPath, {
-				folder: "uploads/products",
+		files.map((file) => {
+			return new Promise<{
+				url: string;
+				format: string;
+				resource_type: string;
+				public_id: string;
+			}>((resolve, reject) => {
+				const uploadStream = cloudinary.uploader.upload_stream(
+					{ folder: "uploads/products" },
+					(error, result) => {
+						if (error) {
+							console.error("Cloudinary Upload Error:", error);
+							reject(error);
+						} else if (result) {
+							resolve({
+								url: result.secure_url,
+								format: result.format,
+								resource_type: result.resource_type,
+								public_id: result.public_id,
+							});
+						} else {
+							reject(
+								new Error("Unexpected Cloudinary response.")
+							);
+						}
+					}
+				);
+				uploadStream.end(file.buffer);
 			});
-			fs.unlinkSync(tempPath); // Delete temp file after upload
-			console.log(result);
-			return result.secure_url;
 		})
 	);
 

@@ -19,8 +19,8 @@ class ProductController {
 		} = req;
 
 		const products = await this.service.getProducts({
-			limit: limit as number,
-			page: page as number,
+			limit: isNaN(Number(limit)) ? 10 : Number(limit),
+			page: isNaN(Number(page)) ? 1 : Number(page),
 			search: search as string | undefined,
 			storeName: storeName as string | undefined,
 			user,
@@ -39,6 +39,7 @@ class ProductController {
 			req.user,
 			req.files as Express.Multer.File[]
 		);
+
 		return res
 			.status(StatusCodes.CREATED)
 			.json({ success: true, data: { product } });

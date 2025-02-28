@@ -3,15 +3,16 @@ import AuthService from "../services/auth.service";
 import validate from "../middlewears/validator/index";
 import {
 	changePasswordSchema,
+	deleteAccountSchema,
 	forgetPasswordSchema,
 	loginSchema,
 	registrationSchema,
-	resendVerificationCodeSchema,
 	verifyUserSchema,
 } from "../middlewears/validator/auth.validator";
 import { Request, Response } from "express";
 import Wrapper from "../middlewears/Wrapper";
 import CONFIG from "../utils/config";
+import { Req } from "../utils/types";
 
 class AuthController {
 	service = new AuthService();
@@ -32,7 +33,8 @@ class AuthController {
 		res.cookie(CONFIG.env.ACCESS_TOKEN, access_token, {
 			httpOnly: true,
 			sameSite: "none",
-			secure: CONFIG.env.NODE_ENV === "production" ? true : false,
+			// secure: CONFIG.env.NODE_ENV === "production" ? true : false,
+			secure: true,
 			expires: new Date(
 				Date.now() + CONFIG.env.ACCESS_TOKEN_EXPIRATION * 60 * 1000
 			), // Coverts minutes to milliseconds
@@ -41,8 +43,8 @@ class AuthController {
 		res.cookie(CONFIG.env.REFRESH_TOKEN, refresh_token, {
 			httpOnly: true,
 			sameSite: "none",
-			secure: CONFIG.env.NODE_ENV === "production" ? true : false,
-			// expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+			// secure: CONFIG.env.NODE_ENV === "production" ? true : false,
+			secure: true,
 			expires: new Date(
 				Date.now() + CONFIG.env.REFRESH_TOKEN_EXPIRATION * 60 * 1000
 			), // Coverts minutes to milliseconds
@@ -53,10 +55,10 @@ class AuthController {
 			.json({ success: true, data: { user } });
 	});
 
-	changePassword = Wrapper(async (req: Request, res: Response) => {
+	changePassword = Wrapper(async (req: Req, res: Response) => {
 		validate(req.body, changePasswordSchema);
 		const {
-			body: { email },
+			user: { email },
 		} = req;
 
 		await this.service.changePassword({
@@ -75,19 +77,19 @@ class AuthController {
 		return res.status(StatusCodes.OK).json({ success: true });
 	});
 
-	resendVerificationCode = Wrapper(async (req: Request, res: Response) => {
+	resendVerificationCode = Wrapper(async (req: Req, res: Response) => {
 		const {
-			body: { email },
+			user: { email },
 		} = req;
-		validate(req.body, resendVerificationCodeSchema);
 		await this.service.resendVerificationCode(email);
 		return res.status(StatusCodes.OK).json({ success: true });
 	});
 
-	verifyUser = Wrapper(async (req: Request, res: Response) => {
+	verifyUser = Wrapper(async (req: Req, res: Response) => {
 		validate(req.body, verifyUserSchema);
 		await this.service.verifyUser({
-			...req.body,
+			code: req.body.code,
+			email: req.user.email,
 		});
 		return res.status(StatusCodes.OK).json({ success: true });
 	});
@@ -100,12 +102,18 @@ class AuthController {
 		return res.status(StatusCodes.OK).json({ success: true });
 	});
 
-	deleteAccount = Wrapper(async (req: Request, res: Response) => {
-		validate(req.body, loginSchema);
+	deleteAccount = Wrapper(async (req: Req, res: Response) => {
+		validate(req.body, deleteAccountSchema);
 		const {
-			body: { email, password },
+			body: { password },
+			user: { email },
 		} = req;
 		await this.service.deleteAccount(email, password);
+		return res.status(StatusCodes.NO_CONTENT).json();
+	});
+
+	logout = Wrapper(async (req: Req, res: Response) => {
+		await this.service.logout(res);
 		return res.status(StatusCodes.NO_CONTENT).json();
 	});
 }
