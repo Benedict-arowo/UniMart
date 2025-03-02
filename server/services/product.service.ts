@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { cropUpload, optimizeUpload, upload } from "../middlewears/cloudinary";
 import { BadrequestError, NotFoundError } from "../middlewears/error";
 import prisma from "../prisma";
@@ -9,42 +10,61 @@ class ProductService {
 		search,
 		page,
 		storeName,
-		user,
+		featured = false,
+		active = true
 	}: IGetProducts) => {
+
+		let query: Prisma.ProductWhereInput = {}
+
+		if (featured) {
+			query["isBoosted"] = true 
+		}
+
+		if (active) {
+			query["isActive"] = true
+		}
+
+		if (search) {
+			query["OR"] = [{
+				name: {
+					mode: "insensitive",
+					contains: search
+				}
+			},{
+				description: {
+					mode: "insensitive",
+					contains: search
+				}
+			},{
+				category: {
+					some: {
+						name: {
+							mode: "insensitive",
+							contains: search
+						}
+					}
+				}
+			},{
+				store: {
+					name: {
+						mode: "insensitive",
+						contains: search
+					}
+				}
+			}]
+		}
+
+		if (storeName) {
+			query["store"] = {
+				name: {
+					mode: "insensitive",
+					contains: storeName
+				}
+			}
+		}
+
 		const products = await prisma.product.findMany({
-			where: {
-				// OR: [
-				// 	{
-				// 		name: {
-				// 			contains: search,
-				// 			mode: "insensitive",
-				// 		},
-				// 	},
-				// 	{
-				// 		description: {
-				// 			contains: search,
-				// 			mode: "insensitive",
-				// 		},
-				// 	},
-				// 	{
-				// 		category: {
-				// 			some: {
-				// 				name: {
-				// 					startsWith: search,
-				// 					mode: "insensitive",
-				// 				},
-				// 			},
-				// 		},
-				// 	},
-				// 	{
-				// 		store: {
-				// 			name: {
-				// 				contains: storeName,
-				// 			},
-				// 		},
-				// 	},
-				// ],
-			},
+			where: query,
 			take: limit,
 			skip: (page - 1) * limit,
 			include: {
@@ -52,8 +72,6 @@ class ProductService {
 				category: true,
 			},
 		});
-
-		console.log(limit, page, products);
 
 		return products;
 	};
@@ -183,8 +201,9 @@ export default ProductService;
 
 interface IGetProducts {
 	limit: number;
-	search: string | undefined;
+	search?: string ;
 	page: number;
-	storeName: string | undefined;
-	user: Req["user"];
+	storeName?: string;
+	featured?: Boolean
+	active?: Boolean
 }

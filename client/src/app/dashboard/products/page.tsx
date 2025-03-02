@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,68 +40,11 @@ import {
 import { FileUploader } from "@/components/FileUploader";
 import { MoreHorizontal, Plus, Trash, Edit, Store } from "lucide-react";
 import Image from "next/image";
-
-interface Product {
-	id: number;
-	name: string;
-	price: number;
-	discountedPrice?: number;
-	stock: number;
-	isBoosted: boolean;
-	isAvailable: boolean;
-	description: string;
-	category: string;
-	images: string[];
-	videos: string[];
-	inStore: boolean;
-}
-
-const initialProducts: Product[] = [
-	{
-		id: 1,
-		name: "Product 1",
-		price: 19.99,
-		stock: 100,
-		isBoosted: false,
-		isAvailable: true,
-		description: "",
-		category: "Category 1",
-		images: [],
-		videos: [],
-		inStore: true,
-	},
-	{
-		id: 2,
-		name: "Product 2",
-		price: 29.99,
-		discountedPrice: 24.99,
-		stock: 50,
-		isBoosted: true,
-		isAvailable: true,
-		description: "",
-		category: "Category 2",
-		images: [],
-		videos: [],
-		inStore: false,
-	},
-	{
-		id: 3,
-		name: "Product 3",
-		price: 39.99,
-		stock: 75,
-		isBoosted: false,
-		isAvailable: false,
-		description: "",
-		category: "Category 1",
-		images: [],
-		videos: [],
-		inStore: true,
-	},
-];
+import { getUserProducts } from "@/services/user";
 
 interface EditProductModalProps {
-	product: Product;
-	onSave: (product: Product) => void;
+	product: IProduct;
+	onSave: (product: IProduct) => void;
 	onClose: () => void;
 }
 
@@ -110,7 +53,7 @@ const EditProductModal = ({
 	onSave,
 	onClose,
 }: EditProductModalProps) => {
-	const [editedProduct, setEditedProduct] = useState<Product>(product);
+	const [editedProduct, setEditedProduct] = useState<IProduct>(product);
 
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -248,7 +191,7 @@ const EditProductModal = ({
 				<div className="grid grid-cols-4 items-center gap-4">
 					<Label className="text-right">In Store</Label>
 					<Switch
-						checked={editedProduct.inStore}
+						checked={editedProduct.store ? true : false}
 						onCheckedChange={(checked) =>
 							setEditedProduct((prev) => ({
 								...prev,
@@ -266,48 +209,23 @@ const EditProductModal = ({
 							onFileSelect={(file) =>
 								setEditedProduct((prev) => ({
 									...prev,
-									images: [
-										...prev.images,
+									media: [
+										...prev.media,
 										URL.createObjectURL(file),
 									],
 								}))
 							}
 						/>
 						<div className="mt-2 flex flex-wrap gap-2">
-							{editedProduct.images.map((image, index) => (
+							{editedProduct.media.map((image, index) => (
 								<Image
 									key={index}
-									src={image}
+									src={image.url}
 									alt={`Product ${index + 1}`}
+									width={80}
+									unoptimized
+									height={80}
 									className="h-20 w-20 object-cover"
-								/>
-							))}
-						</div>
-					</div>
-				</div>
-				<div className="grid grid-cols-4 items-center gap-4">
-					<Label className="text-right">Videos</Label>
-					<div className="col-span-3">
-						<FileUploader
-							id="videos"
-							accept="video/*"
-							onFileSelect={(file) =>
-								setEditedProduct((prev) => ({
-									...prev,
-									videos: [
-										...prev.videos,
-										URL.createObjectURL(file),
-									],
-								}))
-							}
-						/>
-						<div className="mt-2 flex flex-wrap gap-2">
-							{editedProduct.videos.map((video, index) => (
-								<video
-									key={index}
-									src={video}
-									className="h-20 w-20 object-cover"
-									controls
 								/>
 							))}
 						</div>
@@ -325,15 +243,15 @@ const EditProductModal = ({
 };
 
 export default function ProductsPage() {
-	const [products, setProducts] = useState<Product[]>(initialProducts);
-	const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
-	const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+	const [products, setProducts] = useState<IProduct[]>([]);
+	const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+	const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
 
-	const handleEdit = (product: Product) => {
+	const handleEdit = (product: IProduct) => {
 		setEditingProduct(product);
 	};
 
-	const handleSaveEdit = (updatedProduct: Product) => {
+	const handleSaveEdit = (updatedProduct: IProduct) => {
 		setProducts(
 			products.map((p) =>
 				p.id === updatedProduct.id ? updatedProduct : p
@@ -342,7 +260,7 @@ export default function ProductsPage() {
 		setEditingProduct(null);
 	};
 
-	const handleDelete = (id: number) => {
+	const handleDelete = (id: string) => {
 		setProducts(products.filter((product) => product.id !== id));
 	};
 
@@ -353,7 +271,7 @@ export default function ProductsPage() {
 		setSelectedProducts([]);
 	};
 
-	const toggleProductSelection = (id: number) => {
+	const toggleProductSelection = (id: string) => {
 		setSelectedProducts((prevSelected) =>
 			prevSelected.includes(id)
 				? prevSelected.filter((productId) => productId !== id)
@@ -361,15 +279,47 @@ export default function ProductsPage() {
 		);
 	};
 
-	const toggleInStore = (id: number) => {
+	const toggleInStore = (id: string) => {
 		setProducts(
 			products.map((product) =>
 				product.id === id
-					? { ...product, inStore: !product.inStore }
+					? { ...product, inStore: !product.store }
 					: product
 			)
 		);
 	};
+
+	const fetchProducts = async ({
+		page = 1,
+		limit = 10,
+		featured,
+	}: {
+		page: number;
+		limit: number;
+		featured: boolean | undefined;
+	}) => {
+		try {
+			const response = await getUserProducts(limit, page, undefined);
+			if (!response.success) throw new Error("Failed to get products.");
+
+			console.log(response.data.products);
+			return response.data.products;
+		} catch (error) {
+			console.error("Error fetching products:", error);
+		}
+	};
+
+	useEffect(() => {
+		(async () => {
+			const products = await fetchProducts({
+				page: 1,
+				limit: 10,
+				featured: undefined,
+			});
+
+			setProducts(() => products);
+		})();
+	}, []);
 
 	return (
 		<div>
@@ -434,15 +384,15 @@ export default function ProductsPage() {
 							<TableCell>{product.name}</TableCell>
 							<TableCell>
 								${product.price.toFixed(2)}
-								{product.discountedPrice !== undefined && (
+								{product.discountedPrice !== null && (
 									<span className="ml-2 text-sm text-green-600">
 										${product.discountedPrice.toFixed(2)}
 									</span>
 								)}
 							</TableCell>
-							<TableCell>{product.stock}</TableCell>
+							<TableCell>{product.quantity}</TableCell>
 							<TableCell>
-								{product.isAvailable ? (
+								{product.isActive ? (
 									<span className="text-green-600">
 										Available
 									</span>
@@ -457,15 +407,17 @@ export default function ProductsPage() {
 									</span>
 								)}
 							</TableCell>
-							<TableCell>{product.category}</TableCell>
+							<TableCell>
+								{product.category.map((cate) => cate.name)}
+							</TableCell>
 							<TableCell>
 								<Button
 									variant={
-										product.inStore ? "default" : "outline"
+										product.store ? "default" : "outline"
 									}
 									onClick={() => toggleInStore(product.id)}>
 									<Store className="mr-2 h-4 w-4" />
-									{product.inStore
+									{product.store
 										? "Remove from Store"
 										: "Add to Store"}
 								</Button>
@@ -521,4 +473,41 @@ export default function ProductsPage() {
 			</Table>
 		</div>
 	);
+}
+
+interface IProduct {
+	id: string;
+	name: string;
+	quantity: number;
+	isActive: boolean;
+	isBoosted: boolean;
+	boostedAt: Date;
+	boostExpiresAt: Date;
+	description: string;
+	discountedPrice: number;
+	reviews: [];
+	reports: [];
+	likes: [];
+	price: number;
+	payments: [];
+	store?: {
+		id: string;
+		name: string;
+		description: "";
+		customUrl: null;
+		isActive: true;
+		isBoosted: true;
+		boostedAt: null;
+		boostExpiresAt: null;
+		ownerId: string;
+	};
+	media: {
+		id: string;
+		url: string;
+		type: "IMAGE";
+		public_id: string;
+		productId: string;
+		createdAt: Date;
+	}[];
+	category: { name: string }[];
 }

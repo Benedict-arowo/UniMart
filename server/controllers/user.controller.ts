@@ -14,6 +14,36 @@ class UserController {
 		const user = await this.service.getUser(userId);
 		return res.status(StatusCodes.OK).json({ success: true, data: user });
 	};
+
+	getUserProducts = async (req: Req, res: Response) => {
+		const {
+			query: {
+				limit = 10,
+				page = 1,
+				search,
+				active,
+				featured,
+			},
+			user,
+		} = req;
+
+		const products = await this.service.getProducts({
+			user,
+			limit: isNaN(Number(limit)) ? 10 : Number(limit),
+			page: isNaN(Number(page)) ? 1 : Number(page),
+			search: search as string | undefined,
+			active: active ? (active === "true" ? true : false) : undefined,
+			featured: featured
+				? featured === "true"
+					? true
+					: false
+				: undefined,
+		});
+
+		return res
+			.status(StatusCodes.OK)
+			.json({ success: true, data: { products } });
+	};
 }
 
 export default UserController;

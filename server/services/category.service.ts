@@ -7,6 +7,11 @@ class CategoryService {
 				name: true,
 				_count: true,
 			},
+			orderBy: {
+				products: {
+					_count: "desc"
+				}
+			},
 			skip: limit * (page - 1),
 			take: limit,
 		});

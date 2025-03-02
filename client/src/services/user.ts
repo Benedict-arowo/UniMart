@@ -14,3 +14,31 @@ export const getUser = async () => {
 		);
 	}
 };
+
+export const getUserProducts = async (
+	limit: number = 10,
+	page: number = 1,
+	active = undefined,
+	featured = undefined
+) => {
+	try {
+		const response = await API.get(`/user/products`, {
+			params: {
+				limit,
+				page,
+				active: active ? active : undefined,
+				featured: featured ? featured : undefined,
+			},
+		});
+
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			"Error fetching products:",
+			error?.response?.data?.message || "Unknown error"
+		);
+		throw new Error(
+			error.response?.data?.message || "Failed to fetch products."
+		);
+	}
+};

@@ -304,7 +304,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
 			<div className="mt-12">
 				<h2 className="text-2xl font-bold mb-4">Similar Items</h2>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				{/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> */}
+				<div className="flex flex-row gap-8 overflow-x-scroll ">
 					{similarProducts.map((item) => (
 						<ProductCard key={item.id} product={item} />
 					))}
@@ -343,7 +344,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
 			<div className="mt-12">
 				<h2 className="text-2xl font-bold mb-4">Recently Viewed</h2>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				{/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> */}
+				<div className="flex flex-row gap-8 overflow-x-scroll ">
 					{recentlyViewedProducts.map((item) => (
 						<ProductCard key={item.id} product={item} />
 					))}

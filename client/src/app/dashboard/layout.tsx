@@ -16,27 +16,27 @@ import {
 } from "lucide-react";
 
 const sidebarItems = [
-	{ name: "Dashboard", href: "/seller-dashboard", icon: LayoutDashboard },
-	{ name: "Products", href: "/seller-dashboard/products", icon: Package },
-	{ name: "Store", href: "/seller-dashboard/store", icon: Store },
-	{ name: "Analytics", href: "/seller-dashboard/analytics", icon: BarChart },
+	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+	{ name: "Products", href: "/dashboard/products", icon: Package },
+	{ name: "Store", href: "/dashboard/store", icon: Store },
+	{ name: "Analytics", href: "/dashboard/analytics", icon: BarChart },
 	{
 		name: "Social Media",
-		href: "/seller-dashboard/social-media",
+		href: "/dashboard/social-media",
 		icon: Share2,
 	},
 	{
 		name: "Subscription",
-		href: "/seller-dashboard/subscription",
+		href: "/dashboard/subscription",
 		icon: CreditCard,
 	},
 	{
 		name: "Messages",
-		href: "/seller-dashboard/messages",
+		href: "/dashboard/messages",
 		icon: MessageSquare,
 	},
-	{ name: "Reviews", href: "/seller-dashboard/reviews", icon: Star },
-	{ name: "Settings", href: "/seller-dashboard/settings", icon: Settings },
+	{ name: "Reviews", href: "/dashboard/reviews", icon: Star },
+	{ name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export default function SellerDashboardLayout({

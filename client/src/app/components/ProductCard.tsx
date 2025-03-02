@@ -36,7 +36,7 @@ export function ProductCard({ product, isHotDeal = false }: ProductCardProps) {
 
 	return (
 		<Card
-			className={`hover:shadow-lg transition-shadow w-72 duration-200 ${
+			className={`hover:shadow-lg transition-shadow min-w-[288px] w-72 duration-200 ${
 				isHotDeal ? "border-hot-deal" : ""
 			}`}>
 			<Link href={`/product/${product.id}`}>

@@ -14,8 +14,14 @@ class ProductController {
 
 	getProducts = async (req: Req, res: Response) => {
 		const {
-			query: { limit = 10, page = 1, search, storeName },
-			user,
+			query: {
+				limit = 10,
+				page = 1,
+				search,
+				storeName,
+				active,
+				featured,
+			},
 		} = req;
 
 		const products = await this.service.getProducts({
@@ -23,7 +29,12 @@ class ProductController {
 			page: isNaN(Number(page)) ? 1 : Number(page),
 			search: search as string | undefined,
 			storeName: storeName as string | undefined,
-			user,
+			active: active ? (active === "true" ? true : false) : undefined,
+			featured: featured
+				? featured === "true"
+					? true
+					: false
+				: undefined,
 		});
 
 		return res

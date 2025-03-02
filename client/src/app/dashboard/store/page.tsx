@@ -24,14 +24,29 @@ interface Product {
 const initialStoreSettings: StoreSettings = {
 	name: "My Awesome Store",
 	description: "Welcome to my awesome store!",
-	banner: "/placeholder.svg",
-	logo: "/placeholder.svg",
+	banner: "/images/banner-placeholder.svg",
+	logo: "/images/placeholder.svg",
 };
 
 const initialProducts: Product[] = [
-	{ id: 1, name: "Product 1", price: 19.99, image: "/placeholder.svg" },
-	{ id: 2, name: "Product 2", price: 29.99, image: "/placeholder.svg" },
-	{ id: 3, name: "Product 3", price: 39.99, image: "/placeholder.svg" },
+	{
+		id: 1,
+		name: "Product 1",
+		price: 19.99,
+		image: "/images/placeholder.svg",
+	},
+	{
+		id: 2,
+		name: "Product 2",
+		price: 29.99,
+		image: "/images/placeholder.svg",
+	},
+	{
+		id: 3,
+		name: "Product 3",
+		price: 39.99,
+		image: "/images/placeholder.svg",
+	},
 ];
 
 export default function StorePage() {
@@ -103,6 +118,8 @@ export default function StorePage() {
 							<Image
 								src={storeSettings.banner}
 								alt="Store Banner"
+								height={160}
+								width={100}
 								className="mt-2 h-40 w-full object-cover"
 							/>
 						)}
@@ -122,6 +139,8 @@ export default function StorePage() {
 							<Image
 								src={storeSettings.logo}
 								alt="Store Logo"
+								height={80}
+								width={80}
 								className="mt-2 h-20 w-20 object-contain"
 							/>
 						)}
@@ -139,6 +158,8 @@ export default function StorePage() {
 							<Image
 								src={storeSettings.logo}
 								alt="Store Logo"
+								height={48}
+								width={48}
 								className="h-12 w-12 object-contain"
 							/>
 							<h2 className="text-2xl font-bold">
@@ -148,6 +169,8 @@ export default function StorePage() {
 						<Image
 							src={storeSettings.banner}
 							alt="Store Banner"
+							width={100}
+							height={160}
 							className="w-full h-40 object-cover"
 						/>
 						<p>{storeSettings.description}</p>
@@ -159,6 +182,8 @@ export default function StorePage() {
 									<Image
 										src={product.image}
 										alt={product.name}
+										height={160}
+										width={100}
 										className="w-full h-40 object-cover mb-2"
 									/>
 									<h3 className="font-semibold">

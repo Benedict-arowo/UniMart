@@ -1,9 +1,9 @@
 import API from "@/middlewear/axios";
 
-export const getProducts = async (limit: number = 10, page: number = 1) => {
+export const getProducts = async (limit: number = 10, page: number = 1, active = undefined, featured=undefined) => {
 	try {
 		const response = await API.get(`/products`, {
-			params: { limit, page },
+			params: { limit, page, active: active ? active : undefined, featured: featured ? featured : undefined },
 		});
 
 		return response.data;

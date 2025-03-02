@@ -1,25 +1,39 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../prisma";
 import { Req } from "../utils/types";
 
 class StoreService {
-	getStores = async ({ limit, page, search, user }: IGetStores) => {
+	getStores = async ({ limit, page, search, featured, active=true }: IGetStores) => {
+
+		const query: Prisma.StoreWhereInput = {}
+
+		if (search) {
+			query.OR = [
+				{
+					name: {
+						contains: search,
+						mode: "insensitive",
+					},
+				},
+				{
+					description: {
+						contains: search,
+						mode: "insensitive",
+					},
+				},
+			];
+		}
+
+		if (featured) {
+			query["isBoosted"] = true
+		}
+
+		if (active) {
+			query["isActive"] = active
+		}
+
 		const stores = await prisma.store.findMany({
-			where: {
-				OR: [
-					{
-						name: {
-							contains: search,
-							mode: "insensitive",
-						},
-					},
-					{
-						description: {
-							contains: search,
-							mode: "insensitive",
-						},
-					},
-				],
-			},
+			where: query,
 			take: limit,
 			skip: (page - 1) * limit,
 		});
@@ -78,5 +92,6 @@ interface IGetStores {
 	limit: number;
 	page: number;
 	search: string | undefined;
-	user: any;
+	featured?: boolean;
+	active?: boolean;
 }

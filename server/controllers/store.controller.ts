@@ -14,18 +14,18 @@ class StoreController {
 
 	getStores = async (req: Req, res: Response) => {
 		const {
-			query: { limit = 10, page = 1, search },
-			user,
+			query: { limit = 10, page = 1, search, featured, active }
 		} = req;
 
 		const stores = await this.service.getStores({
-			limit: limit as number,
-			page: page as number,
+			limit: isNaN(Number(limit)) ? 10 : Number(limit),
+			page: isNaN(Number(page)) ? 1 : Number(page),
 			search: search as string | undefined,
-			user,
+			active: active ? active === "true" ? true : false : undefined,
+			featured: featured ? featured === "true" ? true : false: undefined,
 		});
 
-		return res.status(StatusCodes.OK).json({ success: true, data: stores });
+		return res.status(StatusCodes.OK).json({ success: true, data: {stores} });
 	};
 
 	getStore = async (req: Req, res: Response) => {
