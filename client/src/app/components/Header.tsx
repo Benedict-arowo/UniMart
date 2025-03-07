@@ -45,17 +45,21 @@ export default function Header() {
 						</form>
 					</div>
 					<nav className="hidden md:flex items-center space-x-4">
-						<Link
-							href="/wishlist"
-							className="text-gray-600 hover:text-primary">
-							<Heart size={24} />
-						</Link>
-						<Link
-							href="/messages"
-							className="text-gray-600 hover:text-primary">
-							<MessageCircle size={24} />
-						</Link>
-						<Notification />
+						{user && (
+							<Link
+								href="/wishlist"
+								className="text-gray-600 hover:text-primary">
+								<Heart size={24} />
+							</Link>
+						)}
+						{user && (
+							<Link
+								href="/messages"
+								className="text-gray-600 hover:text-primary">
+								<MessageCircle size={24} />
+							</Link>
+						)}
+						{user && <Notification />}
 						{user ? (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>

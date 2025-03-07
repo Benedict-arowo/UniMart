@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, X } from "lucide-react";
 import { useChat } from "../../contexts/ChatContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export function Chat() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +24,7 @@ export function Chat() {
 		sendMessage,
 		setActiveConversation,
 	} = useChat();
+	const { user } = useAuth()
 	const [newMessage, setNewMessage] = useState("");
 
 	const handleSendMessage = (e: React.FormEvent) => {
@@ -38,6 +40,7 @@ export function Chat() {
 		0
 	);
 
+	if (!user) return <></>;
 	return (
 		<div className="fixed bottom-4 right-4 z-50">
 			{isOpen ? (

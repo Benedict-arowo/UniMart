@@ -9,8 +9,8 @@ class CategoryService {
 			},
 			orderBy: {
 				products: {
-					_count: "desc"
-				}
+					_count: "desc",
+				},
 			},
 			skip: limit * (page - 1),
 			take: limit,
@@ -27,12 +27,16 @@ class CategoryService {
 			where: {
 				category: {
 					some: {
-						id: categoryId,
+						name: categoryId.toLowerCase(),
 					},
 				},
 			},
 			take: limit,
 			skip: limit * (page - 1),
+			include: {
+				media: true,
+				category: true,
+			},
 		});
 
 		return products;

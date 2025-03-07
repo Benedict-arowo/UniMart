@@ -18,9 +18,14 @@ import { Product } from "../product/[id]/page";
 interface ProductCardProps {
 	product: Product;
 	isHotDeal?: boolean;
+	showButton?: boolean;
 }
 
-export function ProductCard({ product, isHotDeal = false }: ProductCardProps) {
+export function ProductCard({
+	product,
+	isHotDeal = false,
+	showButton = false,
+}: ProductCardProps) {
 	const [isWishlisted, setIsWishlisted] = useState(false);
 	const { user } = useAuth();
 
@@ -36,7 +41,7 @@ export function ProductCard({ product, isHotDeal = false }: ProductCardProps) {
 
 	return (
 		<Card
-			className={`hover:shadow-lg transition-shadow min-w-[288px] w-72 duration-200 ${
+			className={`hover:shadow-lg transition-shadow overflow-hidden w-[236px] duration-200 ${
 				isHotDeal ? "border-hot-deal" : ""
 			}`}>
 			<Link href={`/product/${product.id}`}>
@@ -53,7 +58,7 @@ export function ProductCard({ product, isHotDeal = false }: ProductCardProps) {
 						unoptimized
 						draggable={false}
 						height={200}
-						className="w-full h-48 object-cover rounded-t-lg"
+						className="w-full h-48 object-cover object-center rounded-t-lg"
 					/>
 				</CardHeader>
 				<CardContent className="p-4">
@@ -107,12 +112,14 @@ export function ProductCard({ product, isHotDeal = false }: ProductCardProps) {
 							{isWishlisted ? "Wishlisted" : "Add to Wishlist"}
 						</Button>
 					)}
-					<Button
-						size="sm"
-						className={`${!user && "w-full"}
+					{showButton && (
+						<Button
+							size="sm"
+							className={`${!user && "w-full"}
 							${isHotDeal ? "bg-hot-deal hover:bg-hot-deal/90" : ""}`}>
-						View Details
-					</Button>
+							View Details
+						</Button>
+					)}
 				</CardFooter>
 			</Link>
 		</Card>

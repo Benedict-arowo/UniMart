@@ -6,7 +6,7 @@ const router = express.Router();
 const controller = new CategoryController();
 
 router.get("/", Wrapper(controller.getCategories));
-router.get("/products", Wrapper(controller.getCategoryProducts));
+router.get("/products/:categoryId", Wrapper(controller.getCategoryProducts));
 
 export default {
 	routeUrl: "category",

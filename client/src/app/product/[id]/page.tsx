@@ -40,8 +40,15 @@ export interface Product {
 	}[];
 	description: string;
 	discountedPrice?: number;
-	seller: string;
-	sellerId: number;
+	owner: {
+		id: string;
+		username: string;
+		email: string;
+		isOnline: boolean;
+		lastOnline: Date;
+		createdAt: Date;
+	};
+	ownerId: string;
 	condition: string;
 	rating: number;
 	category: string;
@@ -127,6 +134,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			setIsLoading(true);
 			const response = await getProduct(params.id);
 			if (!response.success) throw new Error("Failed to get product.");
+			console.log(response.data.product);
 			setProduct(response.data.product);
 			setIsLoading(false);
 		};
@@ -135,7 +143,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
 		// Check if 24 hours have passed since first contact (simulated here)
 		const contactTime = localStorage.getItem(
-			`contactTime_${product?.sellerId}`
+			`contactTime_${product?.ownerId}`
 		);
 		if (
 			contactTime &&
@@ -171,14 +179,14 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
 	const handleChatWithSeller = () => {
 		// Simulate first contact time
-		if (!localStorage.getItem(`contactTime_${product?.sellerId}`)) {
+		if (!localStorage.getItem(`contactTime_${product?.ownerId}`)) {
 			localStorage.setItem(
 				`contactTime_${product?.sellerId}`,
 				Date.now().toString()
 			);
 		}
 		// Here you would typically open the chat with the seller
-		console.log("Chat with seller:", product?.sellerId);
+		console.log("Chat with seller:", product?.ownerId);
 	};
 
 	if (isLoading) {
@@ -251,8 +259,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 						<CardTitle className="text-2xl">
 							{product.name}
 						</CardTitle>
-						<CardDescription>
-							Sold by {product.seller}
+						<CardDescription className="font-medium">
+							Sold by {product.owner.username}
 						</CardDescription>
 						<div className="flex items-center mt-2">
 							{[...Array(5)].map((_, i) => (
@@ -275,7 +283,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							${product.price}
 						</p>
 						<p className="mb-2">
-							<strong>Condition:</strong> {product.condition}
+							<strong>Description:</strong>
 						</p>
 						<p className="text-gray-700">{product.description}</p>
 					</CardContent>

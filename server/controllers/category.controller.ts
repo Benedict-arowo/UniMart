@@ -34,7 +34,7 @@ class CategoryController {
 
 		return res.status(StatusCodes.OK).json({
 			success: true,
-			data: products,
+			data: { products },
 		});
 	};
 }

@@ -11,56 +11,60 @@ class ProductService {
 		page,
 		storeName,
 		featured = false,
-		active = true
+		active = true,
 	}: IGetProducts) => {
-
-		let query: Prisma.ProductWhereInput = {}
+		let query: Prisma.ProductWhereInput = {};
 
 		if (featured) {
-			query["isBoosted"] = true 
+			query["isBoosted"] = true;
 		}
 
 		if (active) {
-			query["isActive"] = true
+			query["isActive"] = true;
 		}
 
 		if (search) {
-			query["OR"] = [{
-				name: {
-					mode: "insensitive",
-					contains: search
-				}
-			},{
-				description: {
-					mode: "insensitive",
-					contains: search
-				}
-			},{
-				category: {
-					some: {
-						name: {
-							mode: "insensitive",
-							contains: search
-						}
-					}
-				}
-			},{
-				store: {
+			query["OR"] = [
+				{
 					name: {
 						mode: "insensitive",
-						contains: search
-					}
-				}
-			}]
+						contains: search,
+					},
+				},
+				{
+					description: {
+						mode: "insensitive",
+						contains: search,
+					},
+				},
+				{
+					category: {
+						some: {
+							name: {
+								mode: "insensitive",
+								contains: search,
+							},
+						},
+					},
+				},
+				{
+					store: {
+						name: {
+							mode: "insensitive",
+							contains: search,
+						},
+					},
+				},
+			];
 		}
 
 		if (storeName) {
 			query["store"] = {
 				name: {
 					mode: "insensitive",
-					contains: storeName
-				}
-			}
+					contains: storeName,
+				},
+			};
 		}
 
 		const products = await prisma.product.findMany({
@@ -84,6 +88,16 @@ class ProductService {
 			include: {
 				media: true,
 				category: true,
+				owner: {
+					select: {
+						id: true,
+						username: true,
+						email: true,
+						isOnline: true,
+						lastOnline: true,
+						createdAt: true,
+					},
+				},
 			},
 		});
 
@@ -101,8 +115,8 @@ class ProductService {
 			if (data.categoryIds) {
 				categoryConnections = data.categoryIds.map(
 					(categoryName: string) => ({
-						where: { name: categoryName },
-						create: { name: categoryName },
+						where: { name: categoryName.toLowerCase() },
+						create: { name: categoryName.toLowerCase() },
 					})
 				);
 			}
@@ -201,9 +215,9 @@ export default ProductService;
 
 interface IGetProducts {
 	limit: number;
-	search?: string ;
+	search?: string;
 	page: number;
 	storeName?: string;
-	featured?: Boolean
-	active?: Boolean
+	featured?: Boolean;
+	active?: Boolean;
 }

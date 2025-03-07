@@ -24,7 +24,7 @@ export default function Home() {
 	const [featuredProducts, setFeaturedProducts] = useState<IProductState>({
 		products: [],
 		page: 1,
-		limit: 6,
+		limit: 3,
 	});
 
 	const [categories, setCategories] = useState<ICategory[]>([]);
@@ -169,7 +169,8 @@ export default function Home() {
 						<h2 className="text-2xl font-bold mb-6">
 							Featured Products
 						</h2>
-						<div className="grid place-items-center grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{/* <div className="grid place-items-center grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> */}
+						<div className="flex flex-row flex-wrap gap-8 justify-center">
 							{isLoading
 								? [
 										...Array(
@@ -183,6 +184,7 @@ export default function Home() {
 										<ProductCard
 											key={item.id}
 											product={item}
+											isHotDeal={true}
 										/>
 								  ))}
 						</div>
@@ -225,7 +227,7 @@ export default function Home() {
 										.replace(" ", "-")}`}>
 									<Card className="hover:shadow-lg transition-shadow duration-200">
 										<CardHeader>
-											<CardTitle className="text-center text-sm">
+											<CardTitle className="text-center text-sm capitalize">
 												{category.name}
 											</CardTitle>
 										</CardHeader>

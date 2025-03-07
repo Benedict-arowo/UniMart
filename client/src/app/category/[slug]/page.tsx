@@ -3,54 +3,38 @@
 import { AdSpot } from "@/app/components/ads/AdSpot";
 import { ProductCard } from "@/app/components/ProductCard";
 import { ProductCardSkeleton } from "@/app/components/ProductCardSkeleton";
+import { Product } from "@/app/product/[id]/page";
+import { getItemsInCategory } from "@/services/category";
 import { useState, useEffect } from "react";
-// Mock data for demonstration
-const categoryItemsMock = [
-	{
-		id: 1,
-		name: "Textbook: Introduction to Computer Science",
-		price: 50,
-		image: "/images/placeholder.svg",
-	},
-	{
-		id: 2,
-		name: "Textbook: Calculus I",
-		price: 45,
-		image: "/images/placeholder.svg",
-	},
-	{
-		id: 3,
-		name: "Textbook: Introduction to Psychology",
-		price: 40,
-		image: "/images/placeholder.svg",
-	},
-	{
-		id: 4,
-		name: "Textbook: World History",
-		price: 55,
-		image: "/images/placeholder.svg",
-	},
-];
 
 export default function CategoryPage({ params }: { params: { slug: string } }) {
-	const [categoryItems, setCategoryItems] = useState<
-		{ id: number; name: string; price: number; image: string }[]
-	>([]);
+	const [categoryItems, setCategoryItems] = useState<Product[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const categoryName = params.slug
 		.split("-")
 		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 		.join(" ");
 
+	const getItems = async (limit: number, page: number) => {
+		try {
+			const response = await getItemsInCategory(params.slug, limit, page);
+			if (!response.success) throw new Error("Failed to get products.");
+
+			return response.data.products;
+		} catch (error) {
+			console.error("Error fetching products:", error);
+		}
+	};
+
 	useEffect(() => {
-		const fetchCategoryItems = async () => {
+		(async () => {
 			setIsLoading(true);
-			// Simulate API call
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-			setCategoryItems(categoryItemsMock);
+			const products = await getItems(50, 1);
+
+			setCategoryItems(() => products);
+
 			setIsLoading(false);
-		};
-		fetchCategoryItems();
+		})();
 	}, []);
 
 	return (
