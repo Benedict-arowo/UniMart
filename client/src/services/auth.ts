@@ -25,22 +25,134 @@ export const login = async (data: { email: string; password: string }) => {
 					);
 			}
 		} else if (error.request) {
-			// No response received
 			throw new Error("Network error: Unable to reach server.");
 		} else {
-			// Other unexpected errors
 			throw new Error("Something went wrong, please try again.");
 		}
 	}
 };
 
 export const register = async (data: { email: string; password: string }) => {
-	const response = await API.post("/auth/register", {
-		email: data.email,
-		password: data.password,
-	});
+	try {
+		const response = await API.post("/auth/register", {
+			email: data.email,
+			password: data.password,
+		});
 
-	return response.data;
+		return response.data;
+	} catch (error: any) {
+		if (error.response) {
+			console.log(error.response);
+			switch (error.response.status) {
+				case 400:
+					throw new Error(
+						error.response.data.message ||
+							"Error while trying to create user."
+					);
+				case 500:
+					throw new Error("Server error, please try again later.");
+				default:
+					throw new Error(
+						error.response.data?.message || "An error occurred."
+					);
+			}
+		} else if (error.request) {
+			throw new Error("Network error: Unable to reach server.");
+		} else {
+			throw new Error("Something went wrong, please try again.");
+		}
+	}
+};
+
+export const initforgotPassword = async (data: { email: string }) => {
+	try {
+		const response = await API.post("/auth/init-reset-password", {
+			email: data.email,
+		});
+
+		return response.data.data;
+	} catch (error: any) {
+		if (error.response) {
+			throw new Error(
+				error.response.data?.message || "An error occurred."
+			);
+		} else if (error.request) {
+			throw new Error("Network error: Unable to reach server.");
+		} else {
+			throw new Error("Something went wrong, please try again.");
+		}
+	}
+};
+
+export const forgotPassword = async ({
+	password,
+	code,
+	email,
+}: {
+	password: string;
+	code: string;
+	email: string;
+}) => {
+	try {
+		const response = await API.post("/auth/forget-password", {
+			newPassword: password,
+			code,
+			email,
+		});
+
+		return response.data.data;
+	} catch (error: any) {
+		if (error.response) {
+			throw new Error(
+				error.response.data?.message || "An error occurred."
+			);
+		} else if (error.request) {
+			throw new Error("Network error: Unable to reach server.");
+		} else {
+			throw new Error("Something went wrong, please try again.");
+		}
+	}
+};
+
+export const changePassword = async (data: {
+	oldPassword: string;
+	newPassword: string;
+}) => {
+	try {
+		const response = await API.post("/auth/change-password", {
+			oldPassword: data.oldPassword,
+			newPassword: data.newPassword,
+		});
+
+		return response.data.data;
+	} catch (error: any) {
+		if (error.response) {
+			throw new Error(
+				error.response.data?.message || "An error occurred."
+			);
+		} else if (error.request) {
+			throw new Error("Network error: Unable to reach server.");
+		} else {
+			throw new Error("Something went wrong, please try again.");
+		}
+	}
+};
+
+export const resendVerificationCode = async () => {
+	try {
+		const response = await API.post("/auth/resend-code");
+		return response.data.data;
+	} catch (error: any) {
+		if (error.response) {
+			throw new Error(
+				error.response.data?.message || "An error occurred."
+			);
+		} else if (error.request) {
+			throw new Error("Network error: Unable to reach server.");
+		} else {
+			throw new Error("Something went wrong, please try again.");
+		}
+	}
 };
 
 export const logout = async () => {

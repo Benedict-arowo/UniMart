@@ -38,6 +38,9 @@ export interface Product {
 		productId: string;
 		createdAt: Date;
 	}[];
+	isBoosted: boolean;
+	boostedAt: null | Date;
+	boostExpiresAt: null | Date;
 	description: string;
 	discountedPrice?: number;
 	owner: {
