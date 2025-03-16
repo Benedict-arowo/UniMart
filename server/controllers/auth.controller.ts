@@ -5,6 +5,7 @@ import {
 	changePasswordSchema,
 	deleteAccountSchema,
 	forgetPasswordSchema,
+	initforgetPasswordSchema,
 	loginSchema,
 	registrationSchema,
 	verifyUserSchema,
@@ -70,6 +71,7 @@ class AuthController {
 	});
 
 	initForgetPassword = Wrapper(async (req: Request, res: Response) => {
+		validate(req.body, initforgetPasswordSchema);
 		const {
 			body: { email },
 		} = req;

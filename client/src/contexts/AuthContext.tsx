@@ -7,12 +7,26 @@ import { NotificationProvider } from "./NotificationContext";
 import { login as loginUser, logout as logoutUser } from "../services/auth";
 import { getUser } from "@/services/user";
 
-interface User {
+export interface User {
 	id: string;
 	email: string;
 	roles: string[];
 	username: string;
 	verified: boolean;
+	isOnline: boolean;
+	lastOnline: Date;
+	createdAt: Date;
+	store: {
+		id: string;
+		name: string;
+		description: string;
+		customUrl: string | null;
+		isActive: boolean;
+		isBoosted: boolean | null;
+		boostedAt: Date | null;
+		boostExpiresAt: Date | null;
+		ownerId: string;
+	} | null;
 }
 
 interface AuthContextType {

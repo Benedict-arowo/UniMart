@@ -10,6 +10,9 @@ class UserService {
 			where: {
 				id: userId,
 			},
+			include: {
+				store: true
+			}
 		});
 
 		if (!user) throw new BadrequestError("User not found.");
@@ -71,7 +74,7 @@ class UserService {
 		}
 
 		const products = await prisma.product.findMany({
-			where: { ...query, ownerId: user.id },
+			where: { ...query, ownerId: user },
 			take: limit,
 			skip: (page - 1) * limit,
 			select: {
@@ -108,5 +111,5 @@ interface IGetProducts {
 	storeName?: string;
 	featured?: Boolean;
 	active?: Boolean;
-	user: Req["user"];
+	user: string
 }

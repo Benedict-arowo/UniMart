@@ -70,7 +70,10 @@ class AuthService {
 	}
 
 	async loginUser({ email, password }: { email: string; password: string }) {
-		const user = await prisma.user.findUnique({ where: { email } });
+		const user = await prisma.user.findUnique({
+			where: { email },
+			include: { store: true },
+		});
 		if (!user) throw new BadrequestError("Invalid login provided.");
 
 		if (user.isDeleted)
@@ -192,28 +195,36 @@ class AuthService {
 	}
 
 	async initForgetPassword(email: string) {
-		const user = await prisma.user.findUniqueOrThrow({
-			where: { email },
-		});
+		try {
+			const user = await prisma.user.findUniqueOrThrow({
+				where: { email },
+			});
 
-		if (user.isDeleted)
-			throw new NotFoundError("User account has been deleted.");
+			if (user.isDeleted)
+				throw new NotFoundError("User account has been deleted.");
 
-		const code = await argon.hash(crypto.randomBytes(32).toString("hex"));
-		await prisma.user.update({
-			where: { email },
-			data: {
-				resetPasswordToken: code,
-				resetPasswordTokenExpires: new Date(
-					new Date().setMinutes(
-						CONFIG.env.PASSWORD_CODE_EXPIRATION +
-							new Date().getMinutes()
-					)
-				),
-			},
-		});
+			const code = crypto.randomBytes(32).toString("hex");
+			const hashed_code = await argon.hash(code);
 
-		return;
+			console.log(code);
+			await prisma.user.update({
+				where: { email },
+				data: {
+					resetPasswordToken: hashed_code,
+					resetPasswordTokenExpires: new Date(
+						new Date().setMinutes(
+							CONFIG.env.PASSWORD_CODE_EXPIRATION +
+								new Date().getMinutes()
+						)
+					),
+				},
+			});
+			return;
+		} catch (error: any) {
+			if (error.code === "P2025")
+				throw new NotFoundError("User not found.");
+			throw new InternalServerError("Something went wrong.");
+		}
 	}
 
 	async resendVerificationCode(email: string) {

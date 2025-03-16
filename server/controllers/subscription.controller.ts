@@ -9,13 +9,13 @@ class SubscriptionController {
 	subscribe = async (req: Req, res: Response) => {
 		const {
 			params: { planId },
-			// user: { id: userId, email: userEmail },
+			user: { id: userId, email: userEmail },
 		} = req;
 
 		const subscription = await this.service.subscribe(
 			planId,
-			"0582e028-87e8-4a5d-ab84-2e047824d7cc",
-			"test1@gmail.com"
+			userId,
+			userEmail
 		);
 		return res
 			.status(StatusCodes.OK)
