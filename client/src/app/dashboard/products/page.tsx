@@ -41,9 +41,11 @@ import { FileUploader } from "@/components/FileUploader";
 import { MoreHorizontal, Plus, Trash, Edit, Store } from "lucide-react";
 import Image from "next/image";
 import { getUserProducts } from "@/services/user";
+import { updateProduct } from "@/services/product";
+import { getCategories } from "@/services/category";
 
 interface EditProductModalProps {
-	product: IProduct;
+	product: EditedProduct;
 	onSave: (product: IProduct) => void;
 	onClose: () => void;
 }
@@ -53,7 +55,7 @@ const EditProductModal = ({
 	onSave,
 	onClose,
 }: EditProductModalProps) => {
-	const [editedProduct, setEditedProduct] = useState<IProduct>(product);
+	const [editedProduct, setEditedProduct] = useState<EditedProduct>(product);
 
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -63,6 +65,7 @@ const EditProductModal = ({
 	};
 
 	const handleSave = () => {
+		console.log(editedProduct);
 		onSave(editedProduct);
 		onClose();
 	};
@@ -119,7 +122,7 @@ const EditProductModal = ({
 						id="stock"
 						name="stock"
 						type="number"
-						value={editedProduct.stock}
+						value={editedProduct.quantity}
 						onChange={handleChange}
 						className="col-span-3"
 					/>
@@ -141,11 +144,11 @@ const EditProductModal = ({
 						Category
 					</Label>
 					<Select
-						value={editedProduct.category}
+						value={editedProduct.categories}
 						onValueChange={(value) =>
 							setEditedProduct((prev) => ({
 								...prev,
-								category: value,
+								categories: value,
 							}))
 						}>
 						<SelectTrigger className="col-span-3">
@@ -167,23 +170,11 @@ const EditProductModal = ({
 				<div className="grid grid-cols-4 items-center gap-4">
 					<Label className="text-right">Available</Label>
 					<Switch
-						checked={editedProduct.isAvailable}
+						checked={editedProduct.isActive}
 						onCheckedChange={(checked) =>
 							setEditedProduct((prev) => ({
 								...prev,
-								isAvailable: checked,
-							}))
-						}
-					/>
-				</div>
-				<div className="grid grid-cols-4 items-center gap-4">
-					<Label className="text-right">Boosted</Label>
-					<Switch
-						checked={editedProduct.isBoosted}
-						onCheckedChange={(checked) =>
-							setEditedProduct((prev) => ({
-								...prev,
-								isBoosted: checked,
+								isActive: checked,
 							}))
 						}
 					/>
@@ -209,8 +200,8 @@ const EditProductModal = ({
 							onFileSelect={(file) =>
 								setEditedProduct((prev) => ({
 									...prev,
-									media: [
-										...prev.media,
+									images: [
+										...prev.images,
 										URL.createObjectURL(file),
 									],
 								}))
@@ -245,16 +236,35 @@ const EditProductModal = ({
 export default function ProductsPage() {
 	const [products, setProducts] = useState<IProduct[]>([]);
 	const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-	const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
+	const [editingProduct, setEditingProduct] = useState<EditedProduct | null>(
+		null
+	);
+	const [categories, setCategories] = useState([]);
 
-	const handleEdit = (product: IProduct) => {
-		setEditingProduct(product);
+	const handleEdit = (product: EditedProduct) => {
+		setEditingProduct({
+			...product,
+			categories: product.category.map((category) => {
+				return category.name;
+			}),
+			images: [],
+		});
 	};
 
-	const handleSaveEdit = (updatedProduct: IProduct) => {
+	const handleSaveEdit = async (updatedProduct: EditedProduct) => {
+		const response = await updateProduct(updatedProduct.id, {
+			name: updatedProduct.name,
+			description: updatedProduct.description,
+			price: updatedProduct.price,
+			categories: updatedProduct.categories,
+			quantity: updatedProduct.quantity,
+			isActive: updatedProduct.isActive,
+		});
+		if (!response.success) throw new Error("Failed to update product.");
+		console.log(response.data.product);
 		setProducts(
 			products.map((p) =>
-				p.id === updatedProduct.id ? updatedProduct : p
+				p.id === updatedProduct.id ? response.data.product : p
 			)
 		);
 		setEditingProduct(null);
@@ -280,13 +290,24 @@ export default function ProductsPage() {
 	};
 
 	const toggleInStore = (id: string) => {
-		setProducts(
+n		setProducts(
 			products.map((product) =>
 				product.id === id
 					? { ...product, inStore: !product.store }
 					: product
 			)
 		);
+	};
+
+	const fetchCategories = async () => {
+		try {
+			const response = await getCategories(50, 1);
+			if (!response.success) throw new Error("Failed to get categories.");
+
+			setCategories(() => response.data.categories);
+		} catch (error) {
+			console.error("Error fetching categories:", error);
+		}
 	};
 
 	const fetchProducts = async ({
@@ -386,7 +407,7 @@ export default function ProductsPage() {
 								${product.price.toFixed(2)}
 								{product.discountedPrice !== null && (
 									<span className="ml-2 text-sm text-green-600">
-										${product.discountedPrice.toFixed(2)}
+										${product.discountedPrice}
 									</span>
 								)}
 							</TableCell>
@@ -439,7 +460,15 @@ export default function ProductsPage() {
 											<DialogTrigger asChild>
 												<DropdownMenuItem
 													onClick={() =>
-														handleEdit(product)
+														handleEdit({
+															...product,
+															images: [],
+															categories:
+																product.category.map(
+																	(i) =>
+																		i.name
+																),
+														})
 													}>
 													<Edit className="mr-2 h-4 w-4" />
 													Edit
@@ -510,4 +539,9 @@ interface IProduct {
 		createdAt: Date;
 	}[];
 	category: { name: string }[];
+}
+
+interface EditedProduct extends IProduct {
+	images: string[];
+	categories: string;
 }

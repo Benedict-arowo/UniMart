@@ -15,7 +15,7 @@ router.post(
 	authenticatedOnly,
 	Wrapper(controller.createProduct)
 );
-router.put("/:id", authenticatedOnly, Wrapper(controller.updateProduct));
+router.patch("/:id", authenticatedOnly, Wrapper(controller.updateProduct));
 router.delete("/:id", authenticatedOnly, Wrapper(controller.deleteProduct));
 
 export default {

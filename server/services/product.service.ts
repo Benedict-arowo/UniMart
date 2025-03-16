@@ -112,8 +112,8 @@ class ProductService {
 		try {
 			// Process category connections
 			let categoryConnections = null;
-			if (data.categoryIds) {
-				categoryConnections = data.categoryIds.map(
+			if (data.categories) {
+				categoryConnections = data.categories.map(
 					(categoryName: string) => ({
 						where: { name: categoryName.toLowerCase() },
 						create: { name: categoryName.toLowerCase() },
@@ -156,7 +156,7 @@ class ProductService {
 					// addToStore: data.addToStore as Boolean,
 					isActive: false, //TODO: make it so it's toggleable upon creation.
 					ownerId: user.id,
-					category: data.categoryIds
+					category: data.categories
 						? {
 								connectOrCreate: categoryConnections,
 						  }
@@ -181,11 +181,29 @@ class ProductService {
 				"You do not have permission to modify this product."
 			);
 
+		let categoryConnections;
+
+		if (data.categories) {
+			categoryConnections = {
+				set: {
+					name: "",
+				},
+			};
+		}
+
 		const updatedProduct = await prisma.product.update({
 			where: {
 				id,
 			},
-			data,
+			data: {
+				name: data.name,
+				description: data.description,
+				price: data.price,
+
+				category: data.categories ? categoryConnections : undefined,
+				quantity: data.quantity,
+				isActive: data.isActive,
+			},
 		});
 
 		return updatedProduct;
