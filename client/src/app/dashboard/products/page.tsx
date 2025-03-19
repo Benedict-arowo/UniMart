@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,21 +41,35 @@ import { FileUploader } from "@/components/FileUploader";
 import { MoreHorizontal, Plus, Trash, Edit, Store } from "lucide-react";
 import Image from "next/image";
 import { getUserProducts } from "@/services/user";
-import { updateProduct } from "@/services/product";
+import {
+	deleteProduct,
+	deleteProductImage,
+	updateProduct,
+} from "@/services/product";
 import { getCategories } from "@/services/category";
+import { debounce } from "lodash";
+import { Badge } from "@/components/ui/badge";
 
 interface EditProductModalProps {
 	product: EditedProduct;
-	onSave: (product: IProduct) => void;
+	onSave: (product: any) => void;
+	onRemoveImage: (id: string) => void;
 	onClose: () => void;
 }
 
 const EditProductModal = ({
 	product,
 	onSave,
+	onRemoveImage,
 	onClose,
 }: EditProductModalProps) => {
 	const [editedProduct, setEditedProduct] = useState<EditedProduct>(product);
+	const [newCategory, setNewCategory] = useState("");
+	const [categories, setCategories] = useState([
+		"Category 1",
+		"Category 2",
+		"Category 3",
+	]);
 
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -64,10 +78,30 @@ const EditProductModal = ({
 		setEditedProduct((prev) => ({ ...prev, [name]: value }));
 	};
 
-	const handleSave = () => {
-		console.log(editedProduct);
+	const handleRemoveImage = (id: string) => {
+		setEditedProduct((prod) => {
+			return {
+				...prod,
+				media: [...prod.media.filter((img) => img.id !== id)],
+			};
+		});
+		onRemoveImage(id);
+	};
+
+	const handleSave = async () => {
 		onSave(editedProduct);
 		onClose();
+	};
+
+	const handleAddCategory = () => {
+		if (newCategory.trim() && !categories.includes(newCategory)) {
+			setCategories((prev) => [...prev, newCategory]);
+			setEditedProduct((prev) => ({
+				...prev,
+				categories: [...prev.categories, newCategory],
+			}));
+			setNewCategory("");
+		}
 	};
 
 	return (
@@ -120,7 +154,7 @@ const EditProductModal = ({
 					</Label>
 					<Input
 						id="stock"
-						name="stock"
+						name="quantity"
 						type="number"
 						value={editedProduct.quantity}
 						onChange={handleChange}
@@ -143,7 +177,61 @@ const EditProductModal = ({
 					<Label htmlFor="category" className="text-right">
 						Category
 					</Label>
-					<Select
+
+					<div className="flex flex-col gap-1 col-span-3">
+						<div className="flex flex-wrap gap-2">
+							{editedProduct.categories.map((category) => (
+								<Badge
+									key={category}
+									className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded">
+									{category}
+									<button
+										onClick={() =>
+											setEditedProduct((prev) => ({
+												...prev,
+												categories:
+													prev.categories.filter(
+														(cat) =>
+															cat !== category
+													),
+											}))
+										}
+										className="text-xs ml-2 text-white hover:text-red-500">
+										✕
+									</button>
+								</Badge>
+							))}
+						</div>
+						<div className="flex items-center w-full gap-2">
+							<Input
+								value={newCategory}
+								className="w-full"
+								onChange={(e) => setNewCategory(e.target.value)}
+								placeholder="Add a new category"
+							/>
+							<Button
+								onClick={handleAddCategory}
+								variant="outline">
+								Add
+							</Button>
+						</div>
+					</div>
+					{/* {editedProduct.categories.map((category) => (
+						<Badge
+							key={category}
+							text={category}
+							onRemove={() =>
+								setEditedProduct((prev) => ({
+									...prev,
+									categories: prev.categories.filter(
+										(cat) => cat !== category
+									),
+								}))
+							}
+						/>
+					))} */}
+
+					{/* <Select
 						value={editedProduct.categories}
 						onValueChange={(value) =>
 							setEditedProduct((prev) => ({
@@ -165,7 +253,7 @@ const EditProductModal = ({
 								Category 3
 							</SelectItem>
 						</SelectContent>
-					</Select>
+					</Select> */}
 				</div>
 				<div className="grid grid-cols-4 items-center gap-4">
 					<Label className="text-right">Available</Label>
@@ -180,44 +268,49 @@ const EditProductModal = ({
 					/>
 				</div>
 				<div className="grid grid-cols-4 items-center gap-4">
-					<Label className="text-right">In Store</Label>
-					<Switch
-						checked={editedProduct.store ? true : false}
-						onCheckedChange={(checked) =>
-							setEditedProduct((prev) => ({
-								...prev,
-								inStore: checked,
-							}))
-						}
-					/>
-				</div>
-				<div className="grid grid-cols-4 items-center gap-4">
 					<Label className="text-right">Images</Label>
 					<div className="col-span-3">
 						<FileUploader
 							id="images"
 							accept="image/*"
-							onFileSelect={(file) =>
+							onFileSelect={(file) => {
 								setEditedProduct((prev) => ({
 									...prev,
-									images: [
-										...prev.images,
-										URL.createObjectURL(file),
+									media: [
+										...prev.media,
+										{
+											id: new Date()
+												.getMilliseconds()
+												.toString(),
+											url: URL.createObjectURL(file),
+											createdAt: new Date(),
+											productId: prev.id,
+											public_id: file,
+											type: "IMAGE",
+										},
 									],
-								}))
-							}
+								}));
+							}}
 						/>
 						<div className="mt-2 flex flex-wrap gap-2">
 							{editedProduct.media.map((image, index) => (
-								<Image
-									key={index}
-									src={image.url}
-									alt={`Product ${index + 1}`}
-									width={80}
-									unoptimized
-									height={80}
-									className="h-20 w-20 object-cover"
-								/>
+								<div key={index} className="relative h-20 w-20">
+									<Image
+										src={image.url}
+										alt={`Product ${index + 1}`}
+										width={80}
+										height={80}
+										className="h-20 w-20 object-cover rounded"
+										unoptimized
+									/>
+									<button
+										onClick={() =>
+											handleRemoveImage(image.id)
+										}
+										className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs hover:bg-red-700">
+										✕
+									</button>
+								</div>
 							))}
 						</div>
 					</div>
@@ -233,13 +326,207 @@ const EditProductModal = ({
 	);
 };
 
+// const CreateProductModal = ({
+// 	onSave,
+// 	onClose,
+// }: {
+// 	onSave: () => void;
+// 	onClose: () => void;
+// }) => {
+// 	const [product, setProduct] = useState({
+// 		name: "",
+// 		price: 0,
+// 		discountedPrice: 0,
+// 		quantity: 0,
+// 		description: "",
+// 		media: [],
+// 		isActive: true,
+// 	});
+
+// 	const handleChange = (
+// 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+// 	) => {
+// 		const { name, value } = e.target;
+// 		setProduct((prev) => ({ ...prev, [name]: value }));
+// 	};
+
+// 	const handleSave = async () => {
+// 		onSave(product);
+// 		onClose();
+// 	};
+
+// 	return (
+// 		<DialogContent>
+// 			<DialogHeader>
+// 				<DialogTitle>Create Product</DialogTitle>
+// 			</DialogHeader>
+// 			<div className="grid gap-4 py-4">
+// 				<div className="grid grid-cols-4 items-center gap-4">
+// 					<Label htmlFor="name" className="text-right">
+// 						Name
+// 					</Label>
+// 					<Input
+// 						id="name"
+// 						name="name"
+// 						value={product.name}
+// 						onChange={handleChange}
+// 						className="col-span-3"
+// 					/>
+// 				</div>
+// 				<div className="grid grid-cols-4 items-center gap-4">
+// 					<Label htmlFor="price" className="text-right">
+// 						Price
+// 					</Label>
+// 					<Input
+// 						id="price"
+// 						name="price"
+// 						type="number"
+// 						value={product.price}
+// 						onChange={handleChange}
+// 						className="col-span-3"
+// 					/>
+// 				</div>
+// 				<div className="grid grid-cols-4 items-center gap-4">
+// 					<Label htmlFor="discountedPrice" className="text-right">
+// 						Discounted Price
+// 					</Label>
+// 					<Input
+// 						id="discountedPrice"
+// 						name="discountedPrice"
+// 						type="number"
+// 						value={product.discountedPrice || ""}
+// 						onChange={handleChange}
+// 						className="col-span-3"
+// 					/>
+// 				</div>
+// 				<div className="grid grid-cols-4 items-center gap-4">
+// 					<Label htmlFor="stock" className="text-right">
+// 						Stock
+// 					</Label>
+// 					<Input
+// 						id="stock"
+// 						name="quantity"
+// 						type="number"
+// 						value={product.quantity}
+// 						onChange={handleChange}
+// 						className="col-span-3"
+// 					/>
+// 				</div>
+// 				<div className="grid grid-cols-4 items-center gap-4">
+// 					<Label htmlFor="description" className="text-right">
+// 						Description
+// 					</Label>
+// 					<Textarea
+// 						id="description"
+// 						name="description"
+// 						value={product.description}
+// 						onChange={handleChange}
+// 						className="col-span-3"
+// 					/>
+// 				</div>
+// 				{/* <div className="grid grid-cols-4 items-center gap-4">
+// 					<Label htmlFor="category" className="text-right">
+// 						Category
+// 					</Label>
+// 					<Select
+// 						value={product.category[0]}
+// 						onValueChange={(value) =>
+// 							setEditedProduct((prev) => ({
+// 								...prev,
+// 								categories: value,
+// 							}))
+// 						}>
+// 						<SelectTrigger className="col-span-3">
+// 							<SelectValue placeholder="Select a category" />
+// 						</SelectTrigger>
+// 						<SelectContent>
+// 							<SelectItem value="Category 1">
+// 								Category 1
+// 							</SelectItem>
+// 							<SelectItem value="Category 2">
+// 								Category 2
+// 							</SelectItem>
+// 							<SelectItem value="Category 3">
+// 								Category 3
+// 							</SelectItem>
+// 						</SelectContent>
+// 					</Select>
+// 				</div> */}
+// 				<div className="grid grid-cols-4 items-center gap-4">
+// 					<Label className="text-right">Available</Label>
+// 					<Switch
+// 						checked={product.isActive}
+// 						onCheckedChange={(checked) =>
+// 							setProduct((prev) => ({
+// 								...prev,
+// 								isActive: checked,
+// 							}))
+// 						}
+// 					/>
+// 				</div>
+// 				<div className="grid grid-cols-4 items-center gap-4">
+// 					<Label className="text-right">Images</Label>
+// 					<div className="col-span-3">
+// 						<FileUploader
+// 							id="images"
+// 							accept="image/*"
+// 							onFileSelect={(file) =>
+// 								setProduct((prev) => ({
+// 									...prev,
+// 									media: [
+// 										...prev.media,
+// 										// URL.createObjectURL(file),
+// 									],
+// 								}))
+// 							}
+// 						/>
+// 						<div className="mt-2 flex flex-wrap gap-2">
+// 							{product.media.map((image, index) => (
+// 								<Image
+// 									key={index}
+// 									src={image.url}
+// 									alt={`Product ${index + 1}`}
+// 									width={80}
+// 									unoptimized
+// 									height={80}
+// 									className="h-20 w-20 object-cover"
+// 								/>
+// 							))}
+// 						</div>
+// 					</div>
+// 				</div>
+// 			</div>
+// 			<div className="flex justify-end gap-2">
+// 				<Button onClick={onClose} variant="outline">
+// 					Cancel
+// 				</Button>
+// 				<Button onClick={handleSave}>Save Changes</Button>
+// 			</div>
+// 		</DialogContent>
+// 	);
+// };
+
 export default function ProductsPage() {
 	const [products, setProducts] = useState<IProduct[]>([]);
 	const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 	const [editingProduct, setEditingProduct] = useState<EditedProduct | null>(
 		null
 	);
+	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
+	// const [showCreateProductModal, setShowCreateProductModal] = useState(true);
 	const [categories, setCategories] = useState([]);
+
+	const filteredProducts = useMemo(() => {
+		const normalizedSearch = search.toLowerCase().trim();
+		if (!normalizedSearch) return products;
+
+		return products.filter(
+			(prod) =>
+				prod.name.toLowerCase().includes(normalizedSearch) ||
+				prod.description.toLowerCase().includes(normalizedSearch)
+		);
+	}, [debouncedSearch, products]);
 
 	const handleEdit = (product: EditedProduct) => {
 		setEditingProduct({
@@ -247,37 +534,79 @@ export default function ProductsPage() {
 			categories: product.category.map((category) => {
 				return category.name;
 			}),
-			images: [],
 		});
 	};
+
+	const handleRemoveImage = async (imageId: string) => {
+		// await deleteProductImage(imageId);
+		setProducts((prev) => {
+			const product = prev.find((p) =>
+				p.media.find((img) => img.id === imageId)
+			);
+
+			return prev.map((prod) => {
+				if (prod.id === product.id) {
+					return {
+						...product,
+						media: [
+							...product.media.filter(
+								(img) => img.id !== imageId
+							),
+						],
+					};
+				} else return prod;
+			});
+		});
+	};
+
+	// const handleSearch = () => {
+	// 	const newProducts = products.filter(
+	// 		(prod) =>
+	// 			prod.name.toLowerCase().includes(search.toLowerCase().trim()) ||
+	// 			prod.description
+	// 				.toLowerCase()
+	// 				.includes(search.toLowerCase().trim())
+	// 	);
+
+	// 	setFilteredProducts(() => newProducts);
+	// };
+
+	const handleSearch = debounce((term: string) => {
+		setDebouncedSearch(term);
+	}, 800);
 
 	const handleSaveEdit = async (updatedProduct: EditedProduct) => {
 		const response = await updateProduct(updatedProduct.id, {
 			name: updatedProduct.name,
 			description: updatedProduct.description,
 			price: updatedProduct.price,
-			categories: updatedProduct.categories,
+			// categories: updatedProduct.categories,
+			media: updatedProduct.media,
 			quantity: updatedProduct.quantity,
+			discountedPrice: isNaN(Number(updatedProduct.discountedPrice))
+				? null
+				: Number(updatedProduct.discountedPrice),
 			isActive: updatedProduct.isActive,
 		});
 		if (!response.success) throw new Error("Failed to update product.");
 		console.log(response.data.product);
-		setProducts(
-			products.map((p) =>
+		setProducts((prev) =>
+			prev.map((p) =>
 				p.id === updatedProduct.id ? response.data.product : p
 			)
 		);
 		setEditingProduct(null);
 	};
 
-	const handleDelete = (id: string) => {
+	const handleDelete = async (id: string) => {
+		await deleteProduct(id);
 		setProducts(products.filter((product) => product.id !== id));
 	};
 
 	const handleBulkDelete = () => {
-		setProducts(
-			products.filter((product) => !selectedProducts.includes(product.id))
-		);
+		selectedProducts.forEach(async (prodId) => {
+			await handleDelete(prodId);
+		});
 		setSelectedProducts([]);
 	};
 
@@ -289,15 +618,15 @@ export default function ProductsPage() {
 		);
 	};
 
-	const toggleInStore = (id: string) => {
-n		setProducts(
-			products.map((product) =>
-				product.id === id
-					? { ...product, inStore: !product.store }
-					: product
-			)
-		);
-	};
+	// const toggleInStore = (id: string) => {
+	// 	setProducts(
+	// 		products.map((product) =>
+	// 			product.id === id
+	// 				? { ...product, inStore: !product.store }
+	// 				: product
+	// 		)
+	// 	);
+	// };
 
 	const fetchCategories = async () => {
 		try {
@@ -323,7 +652,6 @@ n		setProducts(
 			const response = await getUserProducts(limit, page, undefined);
 			if (!response.success) throw new Error("Failed to get products.");
 
-			console.log(response.data.products);
 			return response.data.products;
 		} catch (error) {
 			console.error("Error fetching products:", error);
@@ -339,6 +667,7 @@ n		setProducts(
 			});
 
 			setProducts(() => products);
+			// setFilteredProducts(() => products);
 		})();
 	}, []);
 
@@ -354,13 +683,22 @@ n		setProducts(
 						<Trash className="mr-2 h-4 w-4" /> Delete Selected
 					</Button>
 					<Button>
-						<Plus className="mr-2 h-4 w-4" /> Add Product
+						<Plus onClick={() => {}} className="mr-2 h-4 w-4" /> Add
+						Product
 					</Button>
 				</div>
 			</div>
 			<div className="mb-4">
-				<Input placeholder="Search products..." />
+				<Input
+					placeholder="Search products..."
+					value={search}
+					onChange={(e) => {
+						setSearch(e.target.value);
+						handleSearch(e.target.value);
+					}}
+				/>
 			</div>
+
 			<Table>
 				<TableHeader>
 					<TableRow>
@@ -385,12 +723,12 @@ n		setProducts(
 						<TableHead>Stock</TableHead>
 						<TableHead>Status</TableHead>
 						<TableHead>Category</TableHead>
-						<TableHead>In Store</TableHead>
+						{/* <TableHead>In Store</TableHead> */}
 						<TableHead className="text-right">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{products.map((product) => (
+					{filteredProducts.map((product) => (
 						<TableRow key={product.id}>
 							<TableCell>
 								<Checkbox
@@ -431,7 +769,7 @@ n		setProducts(
 							<TableCell>
 								{product.category.map((cate) => cate.name)}
 							</TableCell>
-							<TableCell>
+							{/* <TableCell>
 								<Button
 									variant={
 										product.store ? "default" : "outline"
@@ -442,7 +780,7 @@ n		setProducts(
 										? "Remove from Store"
 										: "Add to Store"}
 								</Button>
-							</TableCell>
+							</TableCell> */}
 							<TableCell className="text-right">
 								<Dialog>
 									<DropdownMenu>
@@ -462,7 +800,6 @@ n		setProducts(
 													onClick={() =>
 														handleEdit({
 															...product,
-															images: [],
 															categories:
 																product.category.map(
 																	(i) =>
@@ -489,11 +826,24 @@ n		setProducts(
 										<EditProductModal
 											product={editingProduct}
 											onSave={handleSaveEdit}
+											onRemoveImage={handleRemoveImage}
 											onClose={() =>
 												setEditingProduct(null)
 											}
 										/>
 									)}
+
+									{/* <CreateProductModal
+										onClose={() =>
+											setShowCreateProductModal(
+												() => false
+											)
+										}
+										onSave={() => {}}
+									/> */}
+									{/* {showCreateProductModal && (
+									
+									)} */}
 								</Dialog>
 							</TableCell>
 						</TableRow>
@@ -534,7 +884,7 @@ interface IProduct {
 		id: string;
 		url: string;
 		type: "IMAGE";
-		public_id: string;
+		public_id: any;
 		productId: string;
 		createdAt: Date;
 	}[];
@@ -542,6 +892,5 @@ interface IProduct {
 }
 
 interface EditedProduct extends IProduct {
-	images: string[];
-	categories: string;
+	categories: string[];
 }

@@ -7,6 +7,7 @@ export const createProductSchema = Joi.object({
 	categories: Joi.array().items(Joi.string()).unique().optional(),
 	quantity: Joi.number().required(),
 	isActive: Joi.boolean().required(),
+	discountedPrice: Joi.number().optional(),
 });
 
 export const updateProductSchema = Joi.object({
@@ -16,6 +17,8 @@ export const updateProductSchema = Joi.object({
 	categories: Joi.array().items(Joi.string()).unique().optional(),
 	quantity: Joi.number().optional(),
 	isActive: Joi.boolean().optional(),
+	discountedPrice: Joi.number().optional(),
+	images: Joi.array().optional(),
 });
 
 export interface IProduct {

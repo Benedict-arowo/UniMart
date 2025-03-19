@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Book, Circle } from "lucide-react";
 import { User } from "@/contexts/AuthContext";
+import { format } from "timeago.js";
 
 // export function UserProfile({ user }: { user: User }) {
 // 	return (
@@ -132,7 +132,7 @@ export function UserProfile({ user }: { user: User }) {
 							</Badge>
 						) : (
 							<Badge className="bg-gray-500 text-white">
-								Last seen ago
+								Last {format(user.lastOnline)} seen ago
 							</Badge>
 						)}
 					</div>

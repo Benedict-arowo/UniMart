@@ -11,8 +11,8 @@ class UserService {
 				id: userId,
 			},
 			include: {
-				store: true
-			}
+				store: true,
+			},
 		});
 
 		if (!user) throw new BadrequestError("User not found.");
@@ -26,7 +26,7 @@ class UserService {
 		search,
 		page,
 		featured = false,
-		active = true,
+		active,
 	}: IGetProducts) => {
 		let query: Prisma.ProductWhereInput = {};
 
@@ -111,5 +111,5 @@ interface IGetProducts {
 	storeName?: string;
 	featured?: Boolean;
 	active?: Boolean;
-	user: string
+	user: string;
 }

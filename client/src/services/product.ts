@@ -46,7 +46,31 @@ export const getProduct = async (id: string) => {
 
 export const updateProduct = async (id: string, data: any) => {
 	try {
-		const response = await API.patch(`/products/${id}`, data);
+		const formData = new FormData();
+
+		for (const key in data) {
+			if (key !== "media") {
+				formData.append(key, data[key]);
+			}
+		}
+
+		if (Array.isArray(data.media)) {
+			data.media.forEach((mediaItem) => {
+				// Ensure it's a new image (not an already uploaded one)
+				if (mediaItem.public_id instanceof File) {
+					console.log(1);
+					console.log(mediaItem.public_id);
+					formData.append("images", mediaItem.public_id);
+				}
+			});
+		}
+
+		const response = await API.patch(`/products/${id}`, formData, {
+			headers: {
+				"Content-Type": "multipart/form-data",
+			},
+		});
+
 		return response.data;
 	} catch (error: any) {
 		console.error(
@@ -55,6 +79,36 @@ export const updateProduct = async (id: string, data: any) => {
 		);
 		throw new Error(
 			error.response?.data?.message || "Failed to update product."
+		);
+	}
+};
+
+export const deleteProduct = async (id: string) => {
+	try {
+		const response = await API.delete(`/products/${id}`);
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			"Error deleting product:",
+			error?.response?.data?.message || "Unknown error"
+		);
+		throw new Error(
+			error.response?.data?.message || "Failed to delete product."
+		);
+	}
+};
+
+export const deleteProductImage = async (id: string) => {
+	try {
+		const response = await API.delete(`/products/image/${id}`);
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			"Error deleting product:",
+			error?.response?.data?.message || "Unknown error"
+		);
+		throw new Error(
+			error.response?.data?.message || "Failed to delete product."
 		);
 	}
 };

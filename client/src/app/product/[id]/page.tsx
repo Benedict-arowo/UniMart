@@ -217,7 +217,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 	return (
 		<div className="container mx-auto px-4 py-8">
 			<div className="grid md:grid-cols-2 gap-8">
-				<div className="relative bg-white p-4 rounded-lg shadow-md">
+				<div className="relative h-full bg-white p-4 rounded-lg shadow-md">
 					{product.media &&
 					product.media[currentMediaIndex].type === "IMAGE" ? (
 						<Image
@@ -229,8 +229,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							alt={product.name}
 							unoptimized
 							width={400}
-							height={400}
-							className="w-full h-auto"
+							height={500}
+							className="w-full h-[500px] object-cover object-center"
 						/>
 					) : (
 						<video
@@ -239,7 +239,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 								product.media[currentMediaIndex].url
 							}
 							controls
-							className="w-full h-auto"
+							className="w-full h-full"
 						/>
 					)}
 					<Button
@@ -282,9 +282,30 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 						</div>
 					</CardHeader>
 					<CardContent>
-						<p className="text-3xl font-bold mb-4">
-							${product.price}
-						</p>
+						{product.discountedPrice ? (
+							<div className="flex flex-col gap-1 mb-4">
+								<p className="text-xl font-medium text-gray-500 line-through">
+									₦{product.price.toLocaleString()}
+								</p>
+								<p className="text-4xl font-bold text-green-600">
+									₦{product.discountedPrice.toLocaleString()}
+								</p>
+								<span className="bg-red-500 text-white px-3 py-1 rounded-md text-sm font-semibold w-fit">
+									{Math.round(
+										((product.price -
+											product.discountedPrice) /
+											product.price) *
+											100
+									)}
+									% OFF
+								</span>
+							</div>
+						) : (
+							<p className="text-4xl font-bold text-gray-900 mb-4">
+								₦{product.price.toLocaleString()}
+							</p>
+						)}
+
 						<p className="mb-2">
 							<strong>Description:</strong>
 						</p>
@@ -356,7 +377,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			<div className="mt-12">
 				<h2 className="text-2xl font-bold mb-4">Recently Viewed</h2>
 				{/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> */}
-				<div className="flex flex-row gap-8 overflow-x-scroll ">
+				<div className="flex flex-row gap-8 w-full overflow-x-scroll ">
 					{recentlyViewedProducts.map((item) => (
 						<ProductCard key={item.id} product={item} />
 					))}

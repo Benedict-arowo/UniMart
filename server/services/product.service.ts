@@ -1,6 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { cropUpload, optimizeUpload, upload } from "../middlewears/cloudinary";
-import { BadrequestError, NotFoundError } from "../middlewears/error";
+import {
+	BadrequestError,
+	InternalServerError,
+	NotFoundError,
+} from "../middlewears/error";
 import prisma from "../prisma";
 import { Req } from "../utils/types";
 
@@ -76,7 +80,6 @@ class ProductService {
 				category: true,
 			},
 		});
-
 		return products;
 	};
 
@@ -141,6 +144,7 @@ class ProductService {
 					description: data.description,
 					quantity: Number(data.quantity),
 					price: Number(data.price),
+					discountedPrice: Number(data.discountedPrice),
 					media: {
 						createMany: {
 							data: uploadedFiles.map((file) => ({
@@ -171,7 +175,12 @@ class ProductService {
 		}
 	};
 
-	updateProduct = async (id: string, data: any, user: Req["user"]) => {
+	updateProduct = async (
+		id: string,
+		data: any,
+		user: Req["user"],
+		files: Express.Multer.File[]
+	) => {
 		const product = await this.getProductById(id, user);
 
 		if (!product) throw new NotFoundError("Product not found.");
@@ -191,22 +200,76 @@ class ProductService {
 			};
 		}
 
-		const updatedProduct = await prisma.product.update({
-			where: {
-				id,
-			},
-			data: {
-				name: data.name,
-				description: data.description,
-				price: data.price,
+		const uploadedFiles = (await upload(files)) as {
+			url: string;
+			format: string;
+			resource_type: string;
+			public_id: string;
+		}[];
 
-				category: data.categories ? categoryConnections : undefined,
-				quantity: data.quantity,
-				isActive: data.isActive,
-			},
-		});
+		if (files.length > 0) {
+			uploadedFiles.forEach((file) => {
+				optimizeUpload(file.public_id);
+				cropUpload(file.public_id);
+			});
+		}
 
-		return updatedProduct;
+		try {
+			const updatedProduct = await prisma.product.update({
+				where: {
+					id: product.id,
+				},
+				data: {
+					name: data.name,
+					description: data.description,
+					price: Number(data.price),
+					discountedPrice: Number(data.discountedPrice),
+					media:
+						files.length > 0
+							? {
+									createMany: {
+										data: uploadedFiles.map((file) => ({
+											url: file.url,
+											type:
+												file.resource_type === "image"
+													? "IMAGE"
+													: "VIDEO",
+											public_id: file.public_id,
+										})),
+									},
+							  }
+							: undefined,
+					// category: data.categories ? categoryConnections : undefined,
+					quantity: Number(data.quantity),
+					isActive: data.isActive === "true" ? true : false,
+				},
+				select: {
+					id: true,
+					name: true,
+					quantity: true,
+					isActive: true,
+					isBoosted: true,
+					boostedAt: true,
+					boostExpiresAt: true,
+					description: true,
+					discountedPrice: true,
+					reviews: true,
+					reports: true,
+					likes: true,
+					price: true,
+					payments: true,
+					store: true,
+					media: true,
+					category: true,
+				},
+			});
+			return updatedProduct;
+		} catch (error: any) {
+			console.log(error);
+			if (error.code === "P2025")
+				throw new NotFoundError("Product not found.");
+			throw new InternalServerError("Something went wrong...");
+		}
 	};
 
 	deleteProduct = async (id: string, user: Req["user"]) => {

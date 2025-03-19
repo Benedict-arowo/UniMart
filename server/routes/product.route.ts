@@ -15,7 +15,12 @@ router.post(
 	authenticatedOnly,
 	Wrapper(controller.createProduct)
 );
-router.patch("/:id", authenticatedOnly, Wrapper(controller.updateProduct));
+router.patch(
+	"/:id",
+	upload.array("images", 10),
+	authenticatedOnly,
+	Wrapper(controller.updateProduct)
+);
 router.delete("/:id", authenticatedOnly, Wrapper(controller.deleteProduct));
 
 export default {

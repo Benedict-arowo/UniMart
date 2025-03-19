@@ -33,9 +33,13 @@ CREATE TABLE "User" (
     "password" TEXT NOT NULL,
     "lastOnline" TIMESTAMP(3),
     "roles" "Role"[],
-    "isDelete" TIMESTAMP(3),
+    "isDeleted" TIMESTAMP(3),
+    "isOnline" BOOLEAN NOT NULL DEFAULT false,
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
     "verificationCode" INTEGER,
+    "verificationCodeExpiration" TIMESTAMP(3),
+    "resetPasswordToken" TEXT,
+    "resetPasswordTokenExpires" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
@@ -64,6 +68,7 @@ CREATE TABLE "Ad" (
     "content" TEXT NOT NULL,
     "status" "AdStatus" NOT NULL DEFAULT 'PENDING',
     "expiresAt" TIMESTAMP(3),
+    "clicks" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -77,6 +82,7 @@ CREATE TABLE "Plan" (
     "durationInDays" INTEGER NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "active" BOOLEAN NOT NULL,
 
     CONSTRAINT "Plan_pkey" PRIMARY KEY ("id")
 );
@@ -84,18 +90,13 @@ CREATE TABLE "Plan" (
 -- CreateTable
 CREATE TABLE "Subscription" (
     "id" TEXT NOT NULL,
+    "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expires" TIMESTAMP(3),
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
     "planId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
 
     CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Wishlist" (
-    "id" TEXT NOT NULL,
-    "ownerId" TEXT NOT NULL,
-
-    CONSTRAINT "Wishlist_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -105,12 +106,16 @@ CREATE TABLE "Product" (
     "description" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
-    "discountedPrice" DOUBLE PRECISION NOT NULL,
-    "isActive" BOOLEAN NOT NULL,
+    "discountedPrice" DOUBLE PRECISION,
+    "isActive" BOOLEAN NOT NULL DEFAULT false,
     "isBoosted" BOOLEAN,
     "boostedAt" TIMESTAMP(3),
     "boostExpiresAt" TIMESTAMP(3),
-    "storeId" TEXT NOT NULL,
+    "location" TEXT,
+    "isNegotiable" BOOLEAN NOT NULL DEFAULT true,
+    "viewsCount" INTEGER NOT NULL DEFAULT 0,
+    "storeId" TEXT,
+    "ownerId" TEXT NOT NULL,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
 );
@@ -128,6 +133,7 @@ CREATE TABLE "Media" (
     "id" TEXT NOT NULL,
     "url" TEXT NOT NULL,
     "type" "MediaType" NOT NULL,
+    "public_id" TEXT,
     "productId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -184,6 +190,7 @@ CREATE TABLE "Message" (
     "id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "type" "MessageType" NOT NULL DEFAULT 'TEXT',
+    "isRead" BOOLEAN NOT NULL DEFAULT false,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "senderId" TEXT NOT NULL,
@@ -203,6 +210,7 @@ CREATE TABLE "Payment" (
     "adId" TEXT,
     "boostedPostId" TEXT,
     "productId" TEXT,
+    "subscriptionId" TEXT,
     "userId" TEXT NOT NULL,
 
     CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
@@ -232,14 +240,6 @@ CREATE TABLE "_UserLikes" (
 );
 
 -- CreateTable
-CREATE TABLE "_WishlistProducts" (
-    "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL,
-
-    CONSTRAINT "_WishlistProducts_AB_pkey" PRIMARY KEY ("A","B")
-);
-
--- CreateTable
 CREATE TABLE "_CategoryToProduct" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
@@ -265,16 +265,10 @@ CREATE UNIQUE INDEX "Store_customUrl_key" ON "Store"("customUrl");
 CREATE UNIQUE INDEX "Store_ownerId_key" ON "Store"("ownerId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Wishlist_ownerId_key" ON "Wishlist"("ownerId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
 
 -- CreateIndex
 CREATE INDEX "_UserLikes_B_index" ON "_UserLikes"("B");
-
--- CreateIndex
-CREATE INDEX "_WishlistProducts_B_index" ON "_WishlistProducts"("B");
 
 -- CreateIndex
 CREATE INDEX "_CategoryToProduct_B_index" ON "_CategoryToProduct"("B");
@@ -295,13 +289,13 @@ ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY
 ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "Plan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Wishlist" ADD CONSTRAINT "Wishlist_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Product" ADD CONSTRAINT "Product_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Product" ADD CONSTRAINT "Product_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "Store"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Product" ADD CONSTRAINT "Product_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Media" ADD CONSTRAINT "Media_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Media" ADD CONSTRAINT "Media_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -328,6 +322,9 @@ ALTER TABLE "Payment" ADD CONSTRAINT "Payment_adId_fkey" FOREIGN KEY ("adId") RE
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -347,12 +344,6 @@ ALTER TABLE "_UserLikes" ADD CONSTRAINT "_UserLikes_A_fkey" FOREIGN KEY ("A") RE
 
 -- AddForeignKey
 ALTER TABLE "_UserLikes" ADD CONSTRAINT "_UserLikes_B_fkey" FOREIGN KEY ("B") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_WishlistProducts" ADD CONSTRAINT "_WishlistProducts_A_fkey" FOREIGN KEY ("A") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_WishlistProducts" ADD CONSTRAINT "_WishlistProducts_B_fkey" FOREIGN KEY ("B") REFERENCES "Wishlist"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_CategoryToProduct" ADD CONSTRAINT "_CategoryToProduct_A_fkey" FOREIGN KEY ("A") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;

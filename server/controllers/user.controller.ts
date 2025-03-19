@@ -52,6 +52,7 @@ class UserController {
 			query: { limit = 10, page = 1, search, active, featured },
 			user,
 		} = req;
+
 		const products = await this.service.getProducts({
 			user: user.id,
 			limit: isNaN(Number(limit)) ? 10 : Number(limit),

@@ -24,7 +24,7 @@ export default function Home() {
 	const [featuredProducts, setFeaturedProducts] = useState({
 		products: [],
 		page: 1,
-		limit: 5,
+		limit: 3,
 	});
 	const [categories, setCategories] = useState([]);
 	const [featuredStores, setFeaturedStores] = useState([]);
@@ -40,8 +40,8 @@ export default function Home() {
 				stores,
 				fetchedCategories,
 			] = await Promise.all([
-				getProducts(12, 1, undefined, false),
-				getProducts(5, 1, undefined, true),
+				getProducts(products.limit, 1, undefined, false),
+				getProducts(featuredProducts.limit, 1, undefined, true),
 				getStores(6, 1, undefined, true),
 				getCategories(6, 1),
 			]);
@@ -66,39 +66,28 @@ export default function Home() {
 	return (
 		<div className="container mx-auto space-y-10 p-6">
 			<AdBanner />
-			<div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-				<div className="lg:col-span-1">
-					<SearchFilters
-						onFilter={(filters) =>
-							console.log("Filtering:", filters)
-						}
-					/>
-				</div>
+			<div className="grid grid-cols-1 lg:grid-cols-4 gap-6 ">
 				<div className="lg:col-span-3 space-y-10">
 					<section>
 						<h2 className="text-3xl font-bold mb-6">
-							🔥 Featured Products
+							Featured Products
 						</h2>
-						<Swiper
-							slidesPerView={1.2}
-							spaceBetween={10}
-							breakpoints={{
-								640: { slidesPerView: 2 },
-								1024: { slidesPerView: 3 },
-							}}>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							{featuredProducts.products.map((item) => (
-								<SwiperSlide key={item.id}>
-									<ProductCard
-										product={item}
-										isHotDeal={true}
-									/>
-								</SwiperSlide>
+								<ProductCard key={item.id} product={item} />
 							))}
-						</Swiper>
+							{isLoading &&
+								Array(3)
+									.fill(0)
+									.map((_, i) => (
+										<ProductCardSkeleton key={i} />
+									))}
+						</div>
 					</section>
 					<section>
 						<h2 className="text-3xl font-bold mb-6">
-							🛒 All Products
+							All Products
 						</h2>
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							{products.products.map((item) => (
@@ -113,9 +102,7 @@ export default function Home() {
 						</div>
 					</section>
 					<section>
-						<h2 className="text-3xl font-bold mb-6">
-							📢 Top Stores
-						</h2>
+						<h2 className="text-3xl font-bold mb-6">Top Stores</h2>
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							{featuredStores.map((store) => (
 								<Link
@@ -147,9 +134,7 @@ export default function Home() {
 						</div>
 					</section>
 					<section>
-						<h2 className="text-3xl font-bold mb-6">
-							📌 Categories
-						</h2>
+						<h2 className="text-3xl font-bold mb-6">Categories</h2>
 						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 							{categories.map((category) => (
 								<Link
@@ -170,7 +155,7 @@ export default function Home() {
 					</section>
 					<section>
 						<h2 className="text-3xl font-bold mb-6">
-							👀 Recently Viewed
+							Recently Viewed
 						</h2>
 						<Swiper
 							slidesPerView={1.2}

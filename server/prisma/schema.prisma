@@ -204,7 +204,7 @@ model Product {
 model Category {
   id       String    @id @default(uuid())
   name     String    @unique
-  products Product[]
+  products Product[] 
 }
 
 model Media {
@@ -212,7 +212,7 @@ model Media {
   url     String
   type    MediaType
   public_id String?
-  product Product   @relation(fields: [productId], references: [id])
+  product Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   productId String
   createdAt DateTime @default(now())
@@ -288,7 +288,7 @@ model Payment {
   subscriptionId String?
 
   ad      Ad?      @relation(fields: [adId], references: [id])
-  product Product? @relation(fields: [productId], references: [id])
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   subscription Subscription? @relation(fields: [subscriptionId], references: [id])
 
   user   User   @relation(fields: [userId], references: [id])

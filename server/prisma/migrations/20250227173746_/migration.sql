@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "Subscription" ADD COLUMN     "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "expires" TIMESTAMP(3);

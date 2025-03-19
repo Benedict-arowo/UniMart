@@ -58,10 +58,12 @@ class ProductController {
 
 	updateProduct = async (req: Req, res: Response) => {
 		validator(req.body, updateProductSchema);
+
 		const product = await this.service.updateProduct(
 			req.params.id,
 			req.body as IProduct,
-			req.user
+			req.user,
+			req.files as Express.Multer.File[]
 		);
 		return res
 			.status(StatusCodes.OK)
