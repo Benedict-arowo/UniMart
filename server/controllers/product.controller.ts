@@ -42,6 +42,23 @@ class ProductController {
 			.json({ success: true, data: { products } });
 	};
 
+	getSimilarProducts = async (req: Req, res: Response) => {
+		const {
+			params: { id },
+			query: { limit = 10, page = 1 },
+		} = req;
+
+		const products = await this.service.getSimilarProducts({
+			productId: id,
+			limit: isNaN(Number(limit)) ? 10 : Number(limit),
+			page: isNaN(Number(page)) ? 1 : Number(page),
+		});
+
+		return res
+			.status(StatusCodes.OK)
+			.json({ success: true, data: { products } });
+	};
+
 	createProduct = async (req: Req, res: Response) => {
 		validator(req.body, createProductSchema);
 

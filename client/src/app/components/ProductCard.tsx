@@ -13,19 +13,17 @@ import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Product } from "../product/[id]/page";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 interface ProductCardProps {
 	product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-	const [isWishlisted, setIsWishlisted] = useState(false);
 	const { user } = useAuth();
+	const { wishlist, handleAddWishlist, handleRemoveWishlist } = useWishlist();
 
-	const toggleWishlist = (e: React.MouseEvent) => {
-		e.preventDefault();
-		setIsWishlisted(!isWishlisted);
-	};
+	const isWishlisted = wishlist.find((item) => item.id === product.id);
 
 	const discountPercentage = product.discountedPrice
 		? Math.round(
@@ -91,7 +89,11 @@ export function ProductCard({ product }: ProductCardProps) {
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={toggleWishlist}
+							onClick={() =>
+								isWishlisted
+									? handleRemoveWishlist(product.id)
+									: handleAddWishlist(product)
+							}
 							className={`transition-all flex items-center gap-2 ${
 								isWishlisted ? "bg-red-500 text-white" : ""
 							}`}>

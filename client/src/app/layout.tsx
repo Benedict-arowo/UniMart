@@ -6,6 +6,7 @@ import { Footer } from "./components/Footer";
 import { Chat } from "./components/Chat";
 import { AuthProvider } from "@/contexts/AuthContext";
 import EmailVerificationBanner from "./components/EmailVerificationBanner";
+import { WishlistProvider } from "@/contexts/WishlistContext";
 
 const inter = Inter({
 	subsets: ["latin"],
@@ -27,11 +28,13 @@ export default function RootLayout({
 		<html lang="en">
 			<body className={inter.className}>
 				<AuthProvider>
-					<Header />
-					<EmailVerificationBanner />
-					<main className="min-h-screen">{children}</main>
-					<Footer />
-					<Chat />
+					<WishlistProvider>
+						<Header />
+						<EmailVerificationBanner />
+						<main className="min-h-screen">{children}</main>
+						<Footer />
+						<Chat />
+					</WishlistProvider>
 				</AuthProvider>
 			</body>
 		</html>

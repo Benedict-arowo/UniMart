@@ -9,12 +9,8 @@ class WishlistController {
 	getWishlist = async (req: Req, res: Response) => {
 		const {
 			user: { id: userId },
-			query: { page = 1, limit = 10 },
 		} = req;
-		const wishlist = await this.service.getWishlist(userId, {
-			page: isNaN(Number(page)) ? 1 : Number(page),
-			limit: isNaN(Number(limit)) ? 10 : Number(page),
-		});
+		const wishlist = await this.service.getWishlist(userId);
 
 		return res
 			.status(StatusCodes.OK)
@@ -24,12 +20,8 @@ class WishlistController {
 	getOtherWishlist = async (req: Req, res: Response) => {
 		const {
 			params: { id: userId },
-			query: { page = 1, limit = 10 },
 		} = req;
-		const wishlist = await this.service.getWishlist(userId, {
-			page: isNaN(Number(page)) ? 1 : Number(page),
-			limit: isNaN(Number(limit)) ? 10 : Number(page),
-		});
+		const wishlist = await this.service.getWishlist(userId);
 
 		return res
 			.status(StatusCodes.OK)

@@ -29,7 +29,11 @@ API.interceptors.response.use(
 		const requestUrl = error.config?.url;
 
 		// Exception: Do NOT redirect if it's the /user endpoint
-		if (error.response?.status === 401 && requestUrl !== "/user") {
+		if (
+			error.response?.status === 401 &&
+			requestUrl !== "/user" &&
+			requestUrl !== "/wishlist"
+		) {
 			console.error("Unauthorized! Redirecting to login...");
 			window.location.href = "/login";
 		}

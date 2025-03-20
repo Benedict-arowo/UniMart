@@ -28,6 +28,31 @@ export const getProducts = async (
 	}
 };
 
+export const getSimilarProducts = async (
+	id: string,
+	limit: number = 10,
+	page: number = 1
+) => {
+	try {
+		const response = await API.get(`/products/similar/${id}`, {
+			params: {
+				limit,
+				page,
+			},
+		});
+
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			"Error fetching products:",
+			error?.response?.data?.message || "Unknown error"
+		);
+		throw new Error(
+			error.response?.data?.message || "Failed to fetch products."
+		);
+	}
+};
+
 export const getProduct = async (id: string) => {
 	try {
 		const response = await API.get(`/products/${id}`);

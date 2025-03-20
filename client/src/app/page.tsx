@@ -6,14 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { AdBanner } from "./components/ads/AdBanner";
 import { ProductCard } from "./components/ProductCard";
-import { SearchFilters } from "./components/SearchFilters";
 import { ProductCardSkeleton } from "./components/ProductCardSkeleton";
 import { AdSpot } from "./components/ads/AdSpot";
 import { getProducts } from "@/services/product";
 import { getStores } from "@/services/store";
 import { getCategories } from "@/services/category";
+import { Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
+import "swiper/css/navigation";
 
 export default function Home() {
 	const [products, setProducts] = useState({
@@ -24,7 +25,7 @@ export default function Home() {
 	const [featuredProducts, setFeaturedProducts] = useState({
 		products: [],
 		page: 1,
-		limit: 3,
+		limit: 4,
 	});
 	const [categories, setCategories] = useState([]);
 	const [featuredStores, setFeaturedStores] = useState([]);
@@ -67,18 +68,18 @@ export default function Home() {
 		<div className="container mx-auto space-y-10 p-6">
 			<AdBanner />
 			<div className="grid grid-cols-1 lg:grid-cols-4 gap-6 ">
-				<div className="lg:col-span-3 space-y-10">
+				<div className="lg:col-span-4 space-y-10">
 					<section>
 						<h2 className="text-3xl font-bold mb-6">
 							Featured Products
 						</h2>
 
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 							{featuredProducts.products.map((item) => (
 								<ProductCard key={item.id} product={item} />
 							))}
 							{isLoading &&
-								Array(3)
+								Array(featuredProducts.limit)
 									.fill(0)
 									.map((_, i) => (
 										<ProductCardSkeleton key={i} />
@@ -89,7 +90,7 @@ export default function Home() {
 						<h2 className="text-3xl font-bold mb-6">
 							All Products
 						</h2>
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 							{products.products.map((item) => (
 								<ProductCard key={item.id} product={item} />
 							))}
@@ -158,11 +159,20 @@ export default function Home() {
 							Recently Viewed
 						</h2>
 						<Swiper
+							modules={[Navigation]}
+							autoplay={{
+								delay: 3000,
+								disableOnInteraction: false,
+							}}
 							slidesPerView={1.2}
 							spaceBetween={10}
+							loop={true}
+							pagination={{ clickable: true }}
+							navigation={true}
 							breakpoints={{
-								640: { slidesPerView: 2 },
-								1024: { slidesPerView: 3 },
+								480: { slidesPerView: 2 },
+								768: { slidesPerView: 3 },
+								1024: { slidesPerView: 4 },
 							}}>
 							{recentlyViewedProducts.map((item) => (
 								<SwiperSlide key={item.id}>

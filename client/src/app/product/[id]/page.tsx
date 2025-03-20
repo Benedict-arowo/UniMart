@@ -23,11 +23,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/app/components/ProductCard";
 import { SellerRating } from "@/app/components/SellerRating";
 import { AdSpot } from "@/app/components/ads/AdSpot";
-import { getProduct } from "@/services/product";
+import { getProduct, getSimilarProducts } from "@/services/product";
 import { useRouter } from "next/navigation";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import { createComment, getComments } from "@/services/comment";
+import { format } from "timeago.js";
+import { addToWishlist } from "@/services/wishlist";
+import { useWishlist } from "@/contexts/WishlistContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Product {
-	id: number;
+	id: string;
 	name: string;
 	price: number;
 	media: {
@@ -57,62 +66,54 @@ export interface Product {
 	category: string;
 }
 
-const comments = [
-	{
-		id: 1,
-		user: "Alice",
-		content: "Great book! Helped me a lot in my CS101 class.",
-		date: "2023-05-15",
-	},
-	{
-		id: 2,
-		user: "Bob",
-		content:
-			"The condition is as described. Very satisfied with my purchase.",
-		date: "2023-05-20",
-	},
-];
-
-const similarProducts: Product[] = [
-	{
-		id: 2,
-		name: "Textbook: Calculus I",
-		price: 45,
-		media: [],
-		description: "",
-		seller: "Jane Smith",
-		sellerId: 102,
-		condition: "Good",
-		rating: 4.2,
-		category: "Textbooks",
-	},
-	{
-		id: 3,
-		name: "Textbook: Introduction to Psychology",
-		price: 40,
-		media: [],
-		description: "",
-		seller: "John Doe",
-		sellerId: 101,
-		condition: "Excellent",
-		rating: 4.7,
-		category: "Textbooks",
-	},
-];
+export interface Comment {
+	id: string;
+	content: string;
+	createdAt: Date;
+	productId: string;
+	userId: string;
+	createdBy: {
+		id: string;
+		username: string;
+		email: string;
+		lastOnline: null | Date;
+		isOnline: boolean;
+		isVerified: boolean;
+		createdAt: Date;
+	};
+}
 
 export default function ProductPage({ params }: { params: { id: string } }) {
 	const [product, setProduct] = useState<Product | null>(null);
+	const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+	const [comments, setComments] = useState<Comment[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 	const [newComment, setNewComment] = useState("");
 	const [recentlyViewedProducts, setRecentlyViewedProducts] = useState([]);
 	const [showRating, setShowRating] = useState(false);
 	const router = useRouter();
+	const {
+		wishlist,
+		isLoading: wishlistIsLoading,
+		handleAddWishlist,
+		handleRemoveWishlist,
+	} = useWishlist();
+	const [isWishlisted, setIsWishlisted] = useState(false);
+	const { user } = useAuth();
+
+	useEffect(() => {
+		setIsWishlisted(() =>
+			wishlistIsLoading || product === null
+				? false
+				: wishlist.find((item) => item.id === product.id || "")
+				? true
+				: false
+		);
+	}, [wishlist, wishlistIsLoading, product]);
 
 	useEffect(() => {
 		if (!product) return;
-
-		console.log(product.id);
 
 		const recentlyViewed = JSON.parse(
 			localStorage.getItem("recently_viewed") || "[]"
@@ -134,15 +135,35 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
 	useEffect(() => {
 		const fetchProduct = async () => {
-			setIsLoading(true);
 			const response = await getProduct(params.id);
 			if (!response.success) throw new Error("Failed to get product.");
-			console.log(response.data.product);
 			setProduct(response.data.product);
-			setIsLoading(false);
 		};
 
-		fetchProduct();
+		const fetchSimilarProduct = async () => {
+			const response = await getSimilarProducts(params.id);
+			if (!response.success) throw new Error("Failed to get product.");
+			setSimilarProducts(response.data.products);
+		};
+		const fetchComments = async () => {
+			const response = await getComments(params.id, 10, 1, true);
+			if (!response.success) throw new Error("Failed to get comments.");
+			setComments(response.data.comments);
+		};
+
+		(async () => {
+			try {
+				setIsLoading(true);
+
+				await fetchProduct();
+				await fetchSimilarProduct();
+				await fetchComments();
+			} catch (error) {
+				console.log(error);
+			} finally {
+				setIsLoading(false);
+			}
+		})();
 
 		// Check if 24 hours have passed since first contact (simulated here)
 		const contactTime = localStorage.getItem(
@@ -173,11 +194,22 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			);
 	};
 
-	const handleCommentSubmit = (e: React.FormEvent) => {
+	const handleCommentSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log("New comment:", newComment);
-		// Here you would typically call an API to submit the comment
-		setNewComment("");
+		if (newComment.trim().length === 0) return;
+
+		try {
+			const response = await createComment(product.id, newComment);
+
+			if (response?.success) {
+				setNewComment("");
+				setComments((prev) => [...prev, response.data.comment]);
+			} else {
+				console.error("Failed to submit comment");
+			}
+		} catch (error) {
+			console.error("Error submitting comment:", error);
+		}
 	};
 
 	const handleChatWithSeller = () => {
@@ -210,7 +242,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 		);
 	}
 
-	if (!product) {
+	if (!isLoading && !product) {
 		return router.push("/404");
 	}
 
@@ -318,10 +350,31 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							<MessageCircle className="mr-2" size={20} />
 							Chat with Seller
 						</Button>
-						<Button variant="outline" className="w-full">
-							<Heart className="mr-2" size={20} />
-							Add to Wishlist
-						</Button>
+						{user && (
+							<Button
+								onClick={() =>
+									isWishlisted
+										? handleRemoveWishlist(product.id)
+										: handleAddWishlist(product)
+								}
+								variant="outline"
+								className={`w-full ${
+									isWishlisted
+										? "!bg-red-500 !text-white"
+										: ""
+								}`}>
+								<Heart
+									size={16}
+									className="transition-colors"
+									fill={
+										isWishlisted ? "currentColor" : "none"
+									}
+								/>
+								{isWishlisted
+									? "Remove from Wishlist"
+									: "Add to Wishlist"}
+							</Button>
+						)}
 					</CardFooter>
 				</Card>
 			</div>
@@ -336,12 +389,25 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
 			<div className="mt-12">
 				<h2 className="text-2xl font-bold mb-4">Similar Items</h2>
-				{/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> */}
-				<div className="flex flex-row gap-8 overflow-x-scroll ">
+				<Swiper
+					modules={[Navigation]}
+					slidesPerView={1.2}
+					spaceBetween={10}
+					direction="horizontal"
+					loop={true}
+					pagination={{ clickable: true }}
+					navigation={true}
+					breakpoints={{
+						480: { slidesPerView: 2 },
+						768: { slidesPerView: 3 },
+						1024: { slidesPerView: 4 },
+					}}>
 					{similarProducts.map((item) => (
-						<ProductCard key={item.id} product={item} />
+						<SwiperSlide key={item.id}>
+							<ProductCard product={item} />
+						</SwiperSlide>
 					))}
-				</div>
+				</Swiper>
 			</div>
 
 			<div className="mt-12">
@@ -351,10 +417,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 						<Card key={comment.id}>
 							<CardHeader>
 								<CardTitle className="text-lg">
-									{comment.user}
+									{comment.createdBy.username}
 								</CardTitle>
 								<CardDescription>
-									{comment.date}
+									{format(comment.createdAt)}
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
@@ -362,25 +428,46 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							</CardContent>
 						</Card>
 					))}
+					{comments.length === 0 && (
+						<p className="text-center text-gray-500">
+							There are currently no comments here.
+						</p>
+					)}
 				</div>
-				<form onSubmit={handleCommentSubmit}>
-					<Textarea
-						placeholder="Write a comment..."
-						value={newComment}
-						onChange={(e) => setNewComment(e.target.value)}
-						className="mb-2"
-					/>
-					<Button type="submit">Post Comment</Button>
-				</form>
+				{user && (
+					<form onSubmit={handleCommentSubmit}>
+						<Textarea
+							placeholder="Write a comment..."
+							value={newComment}
+							onChange={(e) => setNewComment(e.target.value)}
+							className="mb-2"
+						/>
+						<Button type="submit">Post Comment</Button>
+					</form>
+				)}
 			</div>
 
 			<div className="mt-12">
 				<h2 className="text-2xl font-bold mb-4">Recently Viewed</h2>
-				{/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> */}
-				<div className="flex flex-row gap-8 w-full overflow-x-scroll ">
-					{recentlyViewedProducts.map((item) => (
-						<ProductCard key={item.id} product={item} />
-					))}
+				<div>
+					<Swiper
+						modules={[Navigation]}
+						slidesPerView={1.2}
+						spaceBetween={10}
+						loop={true}
+						pagination={{ clickable: true }}
+						navigation={true}
+						breakpoints={{
+							480: { slidesPerView: 2 },
+							768: { slidesPerView: 3 },
+							1024: { slidesPerView: 4 },
+						}}>
+						{recentlyViewedProducts.map((item) => (
+							<SwiperSlide key={item.id}>
+								<ProductCard product={item} />
+							</SwiperSlide>
+						))}
+					</Swiper>
 				</div>
 			</div>
 

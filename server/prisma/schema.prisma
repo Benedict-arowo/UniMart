@@ -72,7 +72,6 @@ model User {
 
   email    String @unique
   password String
-  // wishlist Product[] @relation("UserWishlist")
 
   lastOnline    DateTime?
   roles         Role[]
@@ -88,6 +87,8 @@ model User {
   ads           Ad[]
   products      Product[]      @relation("UserProducts")
   payments      Payment[]
+  comments Comment[]
+  wishlist Wishlist?
 
   isDeleted                  DateTime?
   isOnline                   Boolean   @default(false)
@@ -160,45 +161,57 @@ model Subscription {
   userId String
 }
 
-// model Wishlist {
-//   id    String @id @default(uuid())
-//   owner User   @relation(fields: [ownerId], references: [id])
+model Wishlist {
+  id      String    @id @default(uuid())
+  owner   User      @relation(fields: [ownerId], references: [id])
+  ownerId String    @unique  
 
-//   products Product[] @relation("WishlistProducts")
-
-//   ownerId String @unique
-// }
+  products Product[] @relation("WishlistProducts")
+}
 
 model Product {
-  id String @id @default(uuid())
-
+  id          String    @id @default(uuid())
   name        String
   description String
   quantity    Int
-
-  price           Float
+  price       Float
   discountedPrice Float?
-  store           Store? @relation(fields: [storeId], references: [id])
-  owner           User  @relation("UserProducts", fields: [ownerId], references: [id])
 
-  isActive Boolean @default(false)
+  store      Store?   @relation(fields: [storeId], references: [id])
+  storeId    String?
 
-  isBoosted      Boolean?
-  boostedAt      DateTime?
-  boostExpiresAt DateTime?
-  location    String? // Optional location field
-  isNegotiable Boolean @default(true) // Allow buyers to negotiate
-  viewsCount  Int @default(0) // Track product views
+  owner      User     @relation("UserProducts", fields: [ownerId], references: [id])
+  ownerId    String
 
-  category Category[]
-  likes    User[]     @relation("UserLikes")
-  reviews  Review[]
-  media    Media[] 
-  reports  Report[]
-  payments Payment[]
+  isActive   Boolean  @default(false) 
+  isBoosted  Boolean?  
+  boostedAt  DateTime?
+  boostExpiresAt DateTime? 
+  location   String? 
+  isNegotiable Boolean @default(true) 
 
-  storeId String?
-  ownerId String
+  viewsCount  Int @default(0)
+
+  category    Category[]
+  likes       User[]     @relation("UserLikes")
+  reviews     Review[]
+  media       Media[] 
+  reports     Report[]
+  payments    Payment[]
+  comments    Comment[]
+
+  wishlists   Wishlist[] @relation("WishlistProducts")  // Many-to-Many Wishlist
+}
+
+model Comment {
+  id String @id @default(uuid())
+  content String
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdBy User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  productId String
+  userId String 
 }
 
 model Category {

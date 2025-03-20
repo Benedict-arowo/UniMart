@@ -107,6 +107,42 @@ class ProductService {
 		return product;
 	};
 
+	getSimilarProducts = async ({
+		productId,
+		limit,
+		page,
+	}: {
+		productId: string;
+		limit: number;
+		page: number;
+	}) => {
+		// Get the current product with its category
+		const product = await prisma.product.findUnique({
+			where: { id: productId },
+			include: { category: true },
+		});
+
+		if (!product) throw new NotFoundError("Product not found.");
+
+		const similarProducts = await prisma.product.findMany({
+			where: {
+				id: { not: productId }, // Exclude current product
+				category: {
+					some: { id: { in: product.category.map((cat) => cat.id) } },
+				},
+				isActive: true,
+			},
+			take: limit,
+			skip: (page - 1) * limit,
+			include: {
+				media: true,
+				category: true,
+			},
+		});
+
+		return similarProducts;
+	};
+
 	createProduct = async (
 		data: any,
 		user: Req["user"],
