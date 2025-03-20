@@ -38,7 +38,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { FileUploader } from "@/components/FileUploader";
-import { MoreHorizontal, Plus, Trash, Edit, Store } from "lucide-react";
+import { MoreHorizontal, Plus, Trash, Edit, Store, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { getUserProducts } from "@/services/user";
 import {
@@ -51,7 +51,7 @@ import { debounce } from "lodash";
 import { Badge } from "@/components/ui/badge";
 
 interface EditProductModalProps {
-	product: EditedProduct;
+	product: IProduct;
 	onSave: (product: any) => void;
 	onRemoveImage: (id: string) => void;
 	onClose: () => void;
@@ -63,14 +63,10 @@ const EditProductModal = ({
 	onRemoveImage,
 	onClose,
 }: EditProductModalProps) => {
-	const [editedProduct, setEditedProduct] = useState<EditedProduct>(product);
+	const [editedProduct, setEditedProduct] = useState<IProduct>(product);
 	const [newCategory, setNewCategory] = useState("");
-	const [categories, setCategories] = useState([
-		"Category 1",
-		"Category 2",
-		"Category 3",
-	]);
-
+	const [categories, setCategories] = useState([]);
+	console.log(editedProduct);
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
@@ -98,7 +94,10 @@ const EditProductModal = ({
 			setCategories((prev) => [...prev, newCategory]);
 			setEditedProduct((prev) => ({
 				...prev,
-				categories: [...prev.categories, newCategory],
+				category: [
+					...prev.category,
+					{ id: new Date().toTimeString(), name: newCategory },
+				],
 			}));
 			setNewCategory("");
 		}
@@ -180,20 +179,20 @@ const EditProductModal = ({
 
 					<div className="flex flex-col gap-1 col-span-3">
 						<div className="flex flex-wrap gap-2">
-							{editedProduct.categories.map((category) => (
+							{editedProduct.category.map((category) => (
 								<Badge
-									key={category}
+									key={category.name}
 									className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded">
-									{category}
+									{category.name}
 									<button
 										onClick={() =>
 											setEditedProduct((prev) => ({
 												...prev,
-												categories:
-													prev.categories.filter(
-														(cat) =>
-															cat !== category
-													),
+												category: prev.category.filter(
+													(cat) =>
+														cat.name !==
+														category.name
+												),
 											}))
 										}
 										className="text-xs ml-2 text-white hover:text-red-500">
@@ -303,13 +302,12 @@ const EditProductModal = ({
 										className="h-20 w-20 object-cover rounded"
 										unoptimized
 									/>
-									<button
+									<Trash2
 										onClick={() =>
 											handleRemoveImage(image.id)
 										}
-										className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs hover:bg-red-700">
-										✕
-									</button>
+										className="absolute cursor-pointer top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs hover:bg-red-700"
+									/>
 								</div>
 							))}
 						</div>
@@ -529,12 +527,7 @@ export default function ProductsPage() {
 	}, [debouncedSearch, products]);
 
 	const handleEdit = (product: EditedProduct) => {
-		setEditingProduct({
-			...product,
-			categories: product.category.map((category) => {
-				return category.name;
-			}),
-		});
+		setEditingProduct(() => product);
 	};
 
 	const handleRemoveImage = async (imageId: string) => {
@@ -559,28 +552,16 @@ export default function ProductsPage() {
 		});
 	};
 
-	// const handleSearch = () => {
-	// 	const newProducts = products.filter(
-	// 		(prod) =>
-	// 			prod.name.toLowerCase().includes(search.toLowerCase().trim()) ||
-	// 			prod.description
-	// 				.toLowerCase()
-	// 				.includes(search.toLowerCase().trim())
-	// 	);
-
-	// 	setFilteredProducts(() => newProducts);
-	// };
-
 	const handleSearch = debounce((term: string) => {
 		setDebouncedSearch(term);
 	}, 800);
 
-	const handleSaveEdit = async (updatedProduct: EditedProduct) => {
+	const handleSaveEdit = async (updatedProduct: IProduct) => {
 		const response = await updateProduct(updatedProduct.id, {
 			name: updatedProduct.name,
 			description: updatedProduct.description,
 			price: updatedProduct.price,
-			// categories: updatedProduct.categories,
+			categories: updatedProduct.category.map((item) => item.name),
 			media: updatedProduct.media,
 			quantity: updatedProduct.quantity,
 			discountedPrice: isNaN(Number(updatedProduct.discountedPrice))
@@ -589,7 +570,6 @@ export default function ProductsPage() {
 			isActive: updatedProduct.isActive,
 		});
 		if (!response.success) throw new Error("Failed to update product.");
-		console.log(response.data.product);
 		setProducts((prev) =>
 			prev.map((p) =>
 				p.id === updatedProduct.id ? response.data.product : p
@@ -798,14 +778,7 @@ export default function ProductsPage() {
 											<DialogTrigger asChild>
 												<DropdownMenuItem
 													onClick={() =>
-														handleEdit({
-															...product,
-															categories:
-																product.category.map(
-																	(i) =>
-																		i.name
-																),
-														})
+														handleEdit(product)
 													}>
 													<Edit className="mr-2 h-4 w-4" />
 													Edit
@@ -888,9 +861,8 @@ interface IProduct {
 		productId: string;
 		createdAt: Date;
 	}[];
-	category: { name: string }[];
-}
-
-interface EditedProduct extends IProduct {
-	categories: string[];
+	category: {
+		id: string;
+		name: string;
+	}[];
 }

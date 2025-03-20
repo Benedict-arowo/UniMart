@@ -75,16 +75,17 @@ export const updateProduct = async (id: string, data: any) => {
 
 		for (const key in data) {
 			if (key !== "media") {
-				formData.append(key, data[key]);
+				if (Array.isArray(data[key])) {
+					data[key].forEach((value) => {
+						formData.append(`${key}[]`, value);
+					});
+				} else formData.append(key, data[key]);
 			}
 		}
 
 		if (Array.isArray(data.media)) {
 			data.media.forEach((mediaItem) => {
-				// Ensure it's a new image (not an already uploaded one)
 				if (mediaItem.public_id instanceof File) {
-					console.log(1);
-					console.log(mediaItem.public_id);
 					formData.append("images", mediaItem.public_id);
 				}
 			});

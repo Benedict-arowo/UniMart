@@ -31,7 +31,6 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { createComment, getComments } from "@/services/comment";
 import { format } from "timeago.js";
-import { addToWishlist } from "@/services/wishlist";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
 

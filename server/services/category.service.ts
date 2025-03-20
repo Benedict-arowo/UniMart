@@ -39,6 +39,8 @@ class CategoryService {
 			},
 		});
 
+		console.log(products);
+
 		return products;
 	};
 }

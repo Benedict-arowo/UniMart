@@ -229,10 +229,39 @@ class ProductService {
 		let categoryConnections;
 
 		if (data.categories) {
+			let currentCategories = product.category.map(
+				(category) => category.name
+			);
+
+			let newCategoryList: string[] = [];
+			let categoryRemoval: string[] = [];
+
+			currentCategories.forEach((cate) => {
+				if (data.categories.includes(cate)) newCategoryList.push(cate);
+				else categoryRemoval.push(cate);
+			});
+
+			data.categories.map((cate: string) => {
+				if (!newCategoryList.includes(cate)) newCategoryList.push(cate);
+			});
+
 			categoryConnections = {
-				set: {
-					name: "",
-				},
+				connectOrCreate: newCategoryList.map((cate) => {
+					return {
+						where: {
+							name: cate.toLowerCase(),
+						},
+						create: {
+							name: cate.toLowerCase(),
+						},
+					};
+				}),
+				disconnect:
+					categoryRemoval.length > 0
+						? categoryRemoval.map((cate) => ({
+								name: cate.toLowerCase(),
+						  }))
+						: undefined,
 			};
 		}
 
@@ -275,7 +304,7 @@ class ProductService {
 									},
 							  }
 							: undefined,
-					// category: data.categories ? categoryConnections : undefined,
+					category: data.categories ? categoryConnections : undefined,
 					quantity: Number(data.quantity),
 					isActive: data.isActive === "true" ? true : false,
 				},

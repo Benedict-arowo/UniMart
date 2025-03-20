@@ -30,7 +30,7 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 		(async () => {
 			setIsLoading(true);
 			const products = await getItems(50, 1);
-
+			console.log(products);
 			setCategoryItems(() => products);
 
 			setIsLoading(false);

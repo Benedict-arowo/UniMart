@@ -8,10 +8,10 @@ export function Footer() {
 				<div className="grid grid-cols-1 md:grid-cols-4 gap-8">
 					<div>
 						<h3 className="text-lg font-semibold mb-4">
-							About UniMarket
+							About UniMart
 						</h3>
 						<p className="text-sm">
-							UniMarket is your one-stop shop for all university
+							UniMart is your one-stop shop for all university
 							needs. Connect with student sellers and find great
 							deals on campus.
 						</p>
@@ -116,7 +116,7 @@ export function Footer() {
 				</div>
 				<div className="mt-8 pt-8 border-t border-primary-foreground/10 text-center">
 					<p className="text-sm">
-						&copy; 2025 UniMarket. All rights reserved.
+						&copy; 2025 UniMart. All rights reserved.
 					</p>
 				</div>
 			</div>
