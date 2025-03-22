@@ -30,8 +30,10 @@ export default function RootLayout({
 				<AuthProvider>
 					<WishlistProvider>
 						<Header />
-						<EmailVerificationBanner />
-						<main className="min-h-screen">{children}</main>
+						<main className="min-h-screen">
+							<EmailVerificationBanner />
+							{children}
+						</main>
 						<Footer />
 						<Chat />
 					</WishlistProvider>

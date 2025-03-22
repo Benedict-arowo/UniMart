@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { X, CheckCircle,  Mail } from "lucide-react";
+import { X, CheckCircle, Mail } from "lucide-react";
 import { resendVerificationCode } from "@/services/auth";
 
 export default function EmailVerificationBanner() {
@@ -37,7 +37,7 @@ export default function EmailVerificationBanner() {
 	if (!isVisible) return null;
 
 	return (
-		<div className="bg-yellow-50 border border-yellow-400 text-yellow-800 p-3 flex items-center justify-between rounded-md shadow-md w-full max-w-3xl mx-auto mt-4">
+		<div className="bg-yellow-50 border border-yellow-400 text-yellow-800 px-3 py-1 flex items-center justify-between rounded-md shadow-md w-full max-w-3xl mx-auto mt-4 fixed right-0 left-0">
 			{emailSent ? (
 				<div className="flex items-center gap-2 text-green-700 text-sm">
 					<CheckCircle size={18} />

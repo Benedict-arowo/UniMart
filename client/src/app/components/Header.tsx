@@ -2,7 +2,13 @@
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, User, Search, BookDashed } from "lucide-react";
+import {
+	Heart,
+	MessageCircle,
+	User,
+	Search,
+	BadgeDollarSign,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -17,7 +23,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function Header() {
-	const { user, logout } = useAuth();
+	const { user, logout, isLoading } = useAuth();
 	const router = useRouter();
 
 	const Navigate = (path: string) => {
@@ -113,7 +119,7 @@ export default function Header() {
 									<DropdownMenuItem
 										className="cursor-pointer"
 										onClick={() => Navigate("/dashboard")}>
-										<BookDashed className="mr-2 h-4 w-4" />
+										<BadgeDollarSign className="mr-2 h-4 w-4" />
 										<span>Dashboard</span>
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
@@ -125,9 +131,11 @@ export default function Header() {
 								</DropdownMenuContent>
 							</DropdownMenu>
 						) : (
-							<Button asChild>
-								<Link href="/login">Login</Link>
-							</Button>
+							!isLoading && (
+								<Button asChild>
+									<Link href="/login">Login</Link>
+								</Button>
+							)
 						)}
 					</nav>
 				</div>
