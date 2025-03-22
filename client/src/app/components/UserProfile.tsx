@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { User } from "@/contexts/AuthContext";
 import { format } from "timeago.js";
+import Link from "next/link";
 
 // export function UserProfile({ user }: { user: User }) {
 // 	return (
@@ -154,7 +155,15 @@ export function UserProfile({ user }: { user: User }) {
 					<div className="border-t pt-4 flex justify-between items-center">
 						<div>
 							<h3 className="text-lg font-semibold">
-								Store: {user.store.name}
+								Store:{" "}
+								<Link
+									href={`/store/${
+										user.store.customUrl
+											? user.store.customUrl
+											: user.store.id
+									}`}>
+									{user.store.name}
+								</Link>
 							</h3>
 							<p className="text-sm text-gray-600">
 								{user.store.description ||

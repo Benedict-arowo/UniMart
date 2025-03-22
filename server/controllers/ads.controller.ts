@@ -8,11 +8,11 @@ class AdsController {
 
 	getAllAds = async (req: Req, res: Response) => {
 		try {
-			if (!req.user || req.user.role !== "ADMIN") {
-				return res
-					.status(StatusCodes.FORBIDDEN)
-					.json({ success: false, message: "Access denied." });
-			}
+			// if (!req.user || req.user.role !== "ADMIN") {
+			// 	return res
+			// 		.status(StatusCodes.FORBIDDEN)
+			// 		.json({ success: false, message: "Access denied." });
+			// }
 
 			const { limit = 10, page = 1 } = req.query;
 			const ads = await this.service.getAds({

@@ -124,15 +124,18 @@ model Store {
 model Ad {
   id        String    @id @default(uuid())
   seller    User      @relation(fields: [sellerId], references: [id])
-  sellerId  String
   title     String
   content   String
+  media    Media @relation(fields: [mediaId], references: [id])
   status    AdStatus  @default(PENDING)
   expiresAt DateTime?
   clicks    Int @default(0) // Track ad clicks
   payments  Payment[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  mediaId String @unique
+  sellerId  String
 }
 
 model Plan {
@@ -225,9 +228,11 @@ model Media {
   url     String
   type    MediaType
   public_id String?
-  product Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product Product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ad Ad?
 
-  productId String
+  productId String?
+  adId String?
   createdAt DateTime @default(now())
 }
 

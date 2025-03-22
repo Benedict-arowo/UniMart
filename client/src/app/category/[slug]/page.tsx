@@ -44,13 +44,16 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 			</h1>
 
 			{/* Top Banner Ad */}
-			<div className="mb-8">
-				<AdSpot
-					style="banner"
-					className="w-full"
-					adSlot="category-top-banner"
-				/>
-			</div>
+			{!(!isLoading && categoryItems.length == 0) && (
+				<div className="mb-8">
+					<AdSpot
+						style="banner"
+						className="w-full"
+						adSlot="category-top-banner"
+					/>
+				</div>
+			)}
+
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 				{isLoading
 					? [...Array(8)].map((_, index) => (
@@ -60,6 +63,11 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 							<ProductCard key={item.id} product={item} />
 					  ))}
 			</div>
+			{!isLoading && categoryItems.length == 0 && (
+				<p className="text-center w-full text-gray-500">
+					There are currently no comments here.
+				</p>
+			)}
 
 			<div className="my-8">
 				<AdSpot

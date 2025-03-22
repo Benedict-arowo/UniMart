@@ -38,6 +38,15 @@ class AdsService {
 			where: { status: "ACTIVE" }, // Only active ads
 			skip: (page - 1) * limit,
 			take: limit,
+			include: {
+				media: {
+					select: {
+						id: true,
+						type: true,
+						url: true,
+					},
+				},
+			},
 		});
 		return ads;
 	}
@@ -101,11 +110,11 @@ class AdsService {
 		}
 
 		// Ensure the user is the owner of the ad
-		if (ad.sellerId !== user.id) {
-			throw new UnauthorizedError(
-				"You do not have permission to delete this ad."
-			);
-		}
+		// if (ad.sellerId !== user.id) {
+		// 	throw new UnauthorizedError(
+		// 		"You do not have permission to delete this ad."
+		// 	);
+		// }
 
 		await prisma.ad.delete({ where: { id } });
 	}

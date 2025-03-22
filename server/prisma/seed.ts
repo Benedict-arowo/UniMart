@@ -85,6 +85,9 @@ async function main() {
 	console.log(`✅ Created ${stores.length} Stores`);
 
 	await prisma.product.deleteMany();
+	await prisma.ad.deleteMany();
+	await prisma.media.deleteMany();
+
 	// Create Products (50)
 	const products = [];
 	for (let i = 0; i < 50; i++) {
@@ -122,6 +125,21 @@ async function main() {
 	}
 	console.log(`✅ Created ${products.length} Products`);
 
+	const media = [
+		"https://res.cloudinary.com/dctbkswpr/image/upload/v1742630331/uploads/ads/ciax4blmpprzbmcjjvuk.jpg",
+		"https://res.cloudinary.com/dctbkswpr/image/upload/v1742630264/uploads/ads/hjit4lyk8x4i51mgqcpo.jpg",
+		"https://res.cloudinary.com/dctbkswpr/image/upload/v1742630263/uploads/ads/bbtj0ut0mrrmep8nytgd.jpg",
+	];
+
+	const getMedia = async () => {
+		return await prisma.media.create({
+			data: {
+				type: "IMAGE",
+				url: media[Math.floor(Math.random() * 3)],
+			},
+		});
+	};
+
 	// Create Ads (5)
 	for (let i = 0; i < 5; i++) {
 		await prisma.ad.create({
@@ -129,6 +147,7 @@ async function main() {
 				sellerId: faker.helpers.arrayElement(sellers).id,
 				title: faker.company.name(),
 				content: faker.lorem.sentence(),
+				mediaId: (await getMedia()).id,
 				status: faker.helpers.arrayElement([
 					AdStatus.ACTIVE,
 					AdStatus.PENDING,

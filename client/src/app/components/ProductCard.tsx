@@ -89,12 +89,13 @@ export function ProductCard({ product }: ProductCardProps) {
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={() =>
-								isWishlisted
+							onClick={(e) => {
+								e.stopPropagation();
+								return isWishlisted
 									? handleRemoveWishlist(product.id)
-									: handleAddWishlist(product)
-							}
-							className={`transition-all flex items-center gap-2 ${
+									: handleAddWishlist(product);
+							}}
+							className={`transition-all flex z-10 items-center gap-2 ${
 								isWishlisted ? "bg-red-500 text-white" : ""
 							}`}>
 							<Heart

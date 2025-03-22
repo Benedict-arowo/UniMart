@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, User, Search } from "lucide-react";
+import { Heart, MessageCircle, User, Search, BookDashed } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -109,6 +109,12 @@ export default function Header() {
 										onClick={() => Navigate("/messages")}>
 										<MessageCircle className="mr-2 h-4 w-4" />
 										<span>Messages</span>
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										className="cursor-pointer"
+										onClick={() => Navigate("/dashboard")}>
+										<BookDashed className="mr-2 h-4 w-4" />
+										<span>Dashboard</span>
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
 									<DropdownMenuItem

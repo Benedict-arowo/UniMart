@@ -17,14 +17,7 @@ import { Response } from "express";
 class AuthService {
 	emailService = new EmailService();
 
-	async createUser({
-		email,
-		password,
-	}: {
-		email: string;
-		password: string;
-		username: string;
-	}) {
+	async createUser({ email, password }: { email: string; password: string }) {
 		try {
 			// const verificationCode = Math.floor(Math.random() * 10000);
 			const user = await prisma.user.create({
@@ -45,7 +38,6 @@ class AuthService {
 					// ),
 				},
 			});
-
 			// if (CONFIG.env.SEND_EMAILS)
 			// 	await this.emailService.sendEmail(
 			// 		VerifyEmailTemplate({

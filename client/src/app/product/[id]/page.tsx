@@ -33,6 +33,7 @@ import { createComment, getComments } from "@/services/comment";
 import { format } from "timeago.js";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
 
 export interface Product {
 	id: string;
@@ -294,7 +295,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							{product.name}
 						</CardTitle>
 						<CardDescription className="font-medium">
-							Sold by {product.owner.username}
+							Sold by{" "}
+							<Link href={`/profile/${product.ownerId}`}>
+								{product.owner.username}
+							</Link>
 						</CardDescription>
 						<div className="flex items-center mt-2">
 							{[...Array(5)].map((_, i) => (
@@ -446,6 +450,15 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 				)}
 			</div>
 
+			{showRating && user && (
+				<div className="mt-12">
+					<SellerRating
+						sellerId={product.ownerId}
+						sellerName={product.owner.username}
+					/>
+				</div>
+			)}
+
 			<div className="mt-12">
 				<h2 className="text-2xl font-bold mb-4">Recently Viewed</h2>
 				<div>
@@ -469,15 +482,6 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 					</Swiper>
 				</div>
 			</div>
-
-			{showRating && (
-				<div className="mt-12">
-					<SellerRating
-						sellerId={product.sellerId}
-						sellerName={product.seller}
-					/>
-				</div>
-			)}
 		</div>
 	);
 }
