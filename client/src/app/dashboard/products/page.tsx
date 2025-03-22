@@ -49,6 +49,7 @@ import {
 import { getCategories } from "@/services/category";
 import { debounce } from "lodash";
 import { Badge } from "@/components/ui/badge";
+import { Product } from "@/app/product/[id]/page";
 
 interface EditProductModalProps {
 	product: IProduct;
@@ -66,7 +67,7 @@ const EditProductModal = ({
 	const [editedProduct, setEditedProduct] = useState<IProduct>(product);
 	const [newCategory, setNewCategory] = useState("");
 	const [categories, setCategories] = useState([]);
-	console.log(editedProduct);
+
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
 	) => {
@@ -104,7 +105,10 @@ const EditProductModal = ({
 	};
 
 	return (
-		<DialogContent>
+		<DialogContent
+			onCloseAutoFocus={() => {
+				onClose();
+			}}>
 			<DialogHeader>
 				<DialogTitle>Edit Product</DialogTitle>
 			</DialogHeader>
@@ -507,9 +511,7 @@ const EditProductModal = ({
 export default function ProductsPage() {
 	const [products, setProducts] = useState<IProduct[]>([]);
 	const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-	const [editingProduct, setEditingProduct] = useState<EditedProduct | null>(
-		null
-	);
+	const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	// const [showCreateProductModal, setShowCreateProductModal] = useState(true);
@@ -526,7 +528,7 @@ export default function ProductsPage() {
 		);
 	}, [debouncedSearch, products]);
 
-	const handleEdit = (product: EditedProduct) => {
+	const handleEdit = (product: IProduct) => {
 		setEditingProduct(() => product);
 	};
 
