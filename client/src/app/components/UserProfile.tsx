@@ -90,6 +90,7 @@ import Link from "next/link";
 // 		</Card>
 // 	);
 // }
+
 export function UserProfile({ user }: { user: User }) {
 	return (
 		<Card className="w-full max-w-full mx-auto p-6 shadow-lg rounded-lg border border-gray-200">

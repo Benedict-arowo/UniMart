@@ -30,7 +30,6 @@ export const initforgetPasswordSchema = Joi.object({
 	email: Joi.string().email().required(),
 });
 
-
 export const deleteAccountSchema = Joi.object({
 	password: Joi.string().required(),
 });
@@ -46,7 +45,6 @@ export const RefineUser = (
 			isBoosted: boolean | null;
 			boostedAt: Date | null;
 			boostExpiresAt: Date | null;
-			ownerId: string;
 		} | null;
 	}
 ) => ({

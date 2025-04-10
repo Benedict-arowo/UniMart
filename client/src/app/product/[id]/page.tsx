@@ -34,7 +34,7 @@ import { format } from "timeago.js";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-
+import { getReviews } from "@/services/review";
 export interface Product {
 	id: string;
 	name: string;
@@ -83,10 +83,29 @@ export interface Comment {
 	};
 }
 
+export interface Review {
+	id: "68524cad-ace8-409e-b8f0-bada574d5519";
+	content: "Cool";
+	rating: 5;
+	productId: "10c7a3fe-e55b-4d78-9530-e598754bf8dd";
+	userId: "7f02db15-c18b-4365-8895-9dbfd45b7889";
+	createdAt: "2025-04-10T15:04:05.947Z";
+	reviewer: {
+		id: "7f02db15-c18b-4365-8895-9dbfd45b7889";
+		username: "ibrahimyohanna29_u";
+		email: "ibrahimyohanna29@gmail.com";
+		lastOnline: null;
+		isOnline: false;
+		isVerified: true;
+		createdAt: "2025-03-23T02:51:15.038Z";
+	};
+}
+
 export default function ProductPage({ params }: { params: { id: string } }) {
 	const [product, setProduct] = useState<Product | null>(null);
 	const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
 	const [comments, setComments] = useState<Comment[]>([]);
+	const [reviews, setReviews] = useState<Review[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 	const [newComment, setNewComment] = useState("");
@@ -150,6 +169,11 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			if (!response.success) throw new Error("Failed to get comments.");
 			setComments(response.data.comments);
 		};
+		const fetchReviews = async () => {
+			const response = await getReviews(params.id, 10, 1, true);
+			if (!response.success) throw new Error("Failed to fetch reviews.");
+			setReviews(response.data.reviews);
+		};
 
 		(async () => {
 			try {
@@ -157,7 +181,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
 				await fetchProduct();
 				await fetchSimilarProduct();
-				await fetchComments();
+				// await fetchComments();
+				await fetchReviews();
 			} catch (error) {
 				console.log(error);
 			} finally {
@@ -190,8 +215,23 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			setCurrentMediaIndex(
 				(prevIndex) =>
 					(prevIndex - 1 + product.media.length!) %
-					product?.media.length!
+					product.media.length
 			);
+	};
+
+	const renderStars = (rating: number) => {
+		return (
+			<div className="flex gap-1 text-yellow-500">
+				{[...Array(5)].map((_, i) => (
+					<Star
+						key={i}
+						size={16}
+						fill={i < rating ? "currentColor" : "none"}
+						strokeWidth={1}
+					/>
+				))}
+			</div>
+		);
 	};
 
 	const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -214,14 +254,14 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
 	const handleChatWithSeller = () => {
 		// Simulate first contact time
-		if (!localStorage.getItem(`contactTime_${product?.ownerId}`)) {
+		if (!localStorage.getItem(`contactTime_${product.ownerId}`)) {
 			localStorage.setItem(
-				`contactTime_${product?.sellerId}`,
+				`contactTime_${product.ownerId}`,
 				Date.now().toString()
 			);
 		}
 		// Here you would typically open the chat with the seller
-		console.log("Chat with seller:", product?.ownerId);
+		console.log("Chat with seller:", product.ownerId);
 	};
 
 	if (isLoading) {
@@ -414,47 +454,44 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			</div>
 
 			<div className="mt-12">
-				<h2 className="text-2xl font-bold mb-4">Comments</h2>
-				<div className="space-y-4 mb-4">
-					{comments.map((comment) => (
-						<Card key={comment.id}>
-							<CardHeader>
-								<CardTitle className="text-lg">
-									{comment.createdBy.username}
-								</CardTitle>
-								<CardDescription>
-									{format(comment.createdAt)}
-								</CardDescription>
+				<h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
+				<div className="space-y-4 mb-6">
+					{reviews.map((review) => (
+						<Card
+							key={review.id}
+							className="rounded-2xl shadow-md border border-gray-200">
+							<CardHeader className="flex flex-row justify-between items-start gap-4">
+								<div>
+									<CardTitle className="text-base font-semibold">
+										{review.userId || "Anonymous"}
+									</CardTitle>
+									<CardDescription className="text-sm text-muted-foreground">
+										{format(new Date(review.createdAt))}
+									</CardDescription>
+								</div>
+								{renderStars(review.rating)}
 							</CardHeader>
 							<CardContent>
-								<p>{comment.content}</p>
+								<p className="text-gray-800 max-h-40 overflow-y-auto break-words">
+									{review.content}
+								</p>
 							</CardContent>
 						</Card>
 					))}
-					{comments.length === 0 && (
+					{reviews.length === 0 && (
 						<p className="text-center text-gray-500">
 							There are currently no comments here.
 						</p>
 					)}
 				</div>
-				{user && (
-					<form onSubmit={handleCommentSubmit}>
-						<Textarea
-							placeholder="Write a comment..."
-							value={newComment}
-							onChange={(e) => setNewComment(e.target.value)}
-							className="mb-2"
-						/>
-						<Button type="submit">Post Comment</Button>
-					</form>
-				)}
 			</div>
 
 			{showRating && user && (
 				<div className="mt-12">
 					<SellerRating
-						sellerId={product.ownerId}
+						productId={product.id}
 						sellerName={product.owner.username}
+						updateReviews={setReviews}
 					/>
 				</div>
 			)}

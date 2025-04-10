@@ -3,7 +3,6 @@ import Joi from "joi";
 export const createStoreSchema = Joi.object({
 	name: Joi.string().required(),
 	description: Joi.string().required(),
-	isActive: Joi.boolean().required(),
 });
 
 export const updateStoreSchema = Joi.object({

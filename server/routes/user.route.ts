@@ -8,6 +8,7 @@ const controller = new UserController();
 
 router.get("/", authenticatedOnly, Wrapper(controller.me));
 router.get("/products", authenticatedOnly, Wrapper(controller.getUserProducts));
+router.get("/store", authenticatedOnly, Wrapper(controller.getUserStore));
 router.get("/:id", Wrapper(controller.getUser));
 router.get("/products/:userId", Wrapper(controller.getOtherUserProducts));
 

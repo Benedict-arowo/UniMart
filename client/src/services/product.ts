@@ -138,3 +138,43 @@ export const deleteProductImage = async (id: string) => {
 		);
 	}
 };
+
+export const createProduct = async (data: any) => {
+	try {
+		const formData = new FormData();
+
+		for (const key in data) {
+			if (key !== "media") {
+				if (Array.isArray(data[key])) {
+					data[key].forEach((value) => {
+						formData.append(`${key}[]`, value);
+					});
+				} else formData.append(key, data[key]);
+			}
+		}
+
+		if (Array.isArray(data.media)) {
+			data.media.forEach((mediaItem) => {
+				if (mediaItem.public_id instanceof File) {
+					formData.append("images", mediaItem.public_id);
+				}
+			});
+		}
+
+		const response = await API.post(`/products`, formData, {
+			headers: {
+				"Content-Type": "multipart/form-data",
+			},
+		});
+
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			"Error creating product:",
+			error?.response?.data?.message || "Unknown error"
+		);
+		throw new Error(
+			error.response?.data?.message || "Failed to create product."
+		);
+	}
+};

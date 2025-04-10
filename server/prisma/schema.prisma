@@ -109,6 +109,8 @@ model Store {
   description String
   customUrl   String? @unique
 
+  banner Media?
+  
   owner    User      @relation(fields: [ownerId], references: [id])
   products Product[]
 
@@ -230,7 +232,8 @@ model Media {
   public_id String?
   product Product?   @relation(fields: [productId], references: [id], onDelete: Cascade)
   ad Ad?
-
+  store Store? @relation(fields: [storeId], references: [id])
+  storeId String? @unique
   productId String?
   adId String?
   createdAt DateTime @default(now())

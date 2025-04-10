@@ -25,7 +25,7 @@ export interface User {
 		isBoosted: boolean | null;
 		boostedAt: Date | null;
 		boostExpiresAt: Date | null;
-		ownerId: string;
+		banner: any | null;
 	} | null;
 }
 

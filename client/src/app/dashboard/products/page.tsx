@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,46 +27,60 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
+	DialogPortal,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { FileUploader } from "@/components/FileUploader";
-import { MoreHorizontal, Plus, Trash, Edit, Store, Trash2 } from "lucide-react";
+import { MoreHorizontal, Plus, Trash, Edit, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { getUserProducts } from "@/services/user";
 import {
 	deleteProduct,
-	deleteProductImage,
 	updateProduct,
+	createProduct,
 } from "@/services/product";
-import { getCategories } from "@/services/category";
-import { debounce } from "lodash";
 import { Badge } from "@/components/ui/badge";
-import { Product } from "@/app/product/[id]/page";
 
 interface EditProductModalProps {
-	product: IProduct;
-	onSave: (product: any) => void;
+	product?: IProduct; // Made optional to support creation
+	isNew?: boolean;
+	onSave: (product: IProduct) => void;
 	onRemoveImage: (id: string) => void;
 	onClose: () => void;
 }
 
 const EditProductModal = ({
 	product,
+	isNew = false,
 	onSave,
 	onRemoveImage,
 	onClose,
 }: EditProductModalProps) => {
-	const [editedProduct, setEditedProduct] = useState<IProduct>(product);
+	// Create a default empty product for new products
+	const defaultNewProduct: IProduct = {
+		id: "",
+		name: "",
+		quantity: 0,
+		isActive: true,
+		isBoosted: false,
+		boostedAt: new Date(),
+		boostExpiresAt: new Date(),
+		description: "",
+		discountedPrice: null,
+		reviews: [],
+		reports: [],
+		likes: [],
+		price: 0,
+		payments: [],
+		media: [],
+		category: [],
+	};
+
+	const [editedProduct, setEditedProduct] = useState<IProduct>(
+		product || defaultNewProduct
+	);
 	const [newCategory, setNewCategory] = useState("");
 	const [categories, setCategories] = useState([]);
 
@@ -110,7 +126,9 @@ const EditProductModal = ({
 				onClose();
 			}}>
 			<DialogHeader>
-				<DialogTitle>Edit Product</DialogTitle>
+				<DialogTitle>
+					{isNew ? "Add Product" : "Edit Product"}
+				</DialogTitle>
 			</DialogHeader>
 			<div className="grid gap-4 py-4">
 				<div className="grid grid-cols-4 items-center gap-4">
@@ -219,44 +237,6 @@ const EditProductModal = ({
 							</Button>
 						</div>
 					</div>
-					{/* {editedProduct.categories.map((category) => (
-						<Badge
-							key={category}
-							text={category}
-							onRemove={() =>
-								setEditedProduct((prev) => ({
-									...prev,
-									categories: prev.categories.filter(
-										(cat) => cat !== category
-									),
-								}))
-							}
-						/>
-					))} */}
-
-					{/* <Select
-						value={editedProduct.categories}
-						onValueChange={(value) =>
-							setEditedProduct((prev) => ({
-								...prev,
-								categories: value,
-							}))
-						}>
-						<SelectTrigger className="col-span-3">
-							<SelectValue placeholder="Select a category" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="Category 1">
-								Category 1
-							</SelectItem>
-							<SelectItem value="Category 2">
-								Category 2
-							</SelectItem>
-							<SelectItem value="Category 3">
-								Category 3
-							</SelectItem>
-						</SelectContent>
-					</Select> */}
 				</div>
 				<div className="grid grid-cols-4 items-center gap-4">
 					<Label className="text-right">Available</Label>
@@ -296,24 +276,30 @@ const EditProductModal = ({
 							}}
 						/>
 						<div className="mt-2 flex flex-wrap gap-2">
-							{editedProduct.media.map((image, index) => (
-								<div key={index} className="relative h-20 w-20">
-									<Image
-										src={image.url}
-										alt={`Product ${index + 1}`}
-										width={80}
-										height={80}
-										className="h-20 w-20 object-cover rounded"
-										unoptimized
-									/>
-									<Trash2
-										onClick={() =>
-											handleRemoveImage(image.id)
-										}
-										className="absolute cursor-pointer top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs hover:bg-red-700"
-									/>
-								</div>
-							))}
+							{editedProduct.media &&
+								editedProduct.media.map((image, index) => (
+									<div
+										key={index}
+										className="relative h-20 w-20">
+										<Image
+											src={
+												image.url ||
+												"/placeholder.svg?height=80&width=80"
+											}
+											alt={`Product ${index + 1}`}
+											width={80}
+											height={80}
+											className="h-20 w-20 object-cover rounded"
+											unoptimized
+										/>
+										<Trash2
+											onClick={() =>
+												handleRemoveImage(image.id)
+											}
+											className="absolute cursor-pointer top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs hover:bg-red-700"
+										/>
+									</div>
+								))}
 						</div>
 					</div>
 				</div>
@@ -322,200 +308,21 @@ const EditProductModal = ({
 				<Button onClick={onClose} variant="outline">
 					Cancel
 				</Button>
-				<Button onClick={handleSave}>Save Changes</Button>
+				<Button onClick={handleSave}>
+					{isNew ? "Add Product" : "Save Changes"}
+				</Button>
 			</div>
 		</DialogContent>
 	);
 };
 
-// const CreateProductModal = ({
-// 	onSave,
-// 	onClose,
-// }: {
-// 	onSave: () => void;
-// 	onClose: () => void;
-// }) => {
-// 	const [product, setProduct] = useState({
-// 		name: "",
-// 		price: 0,
-// 		discountedPrice: 0,
-// 		quantity: 0,
-// 		description: "",
-// 		media: [],
-// 		isActive: true,
-// 	});
-
-// 	const handleChange = (
-// 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-// 	) => {
-// 		const { name, value } = e.target;
-// 		setProduct((prev) => ({ ...prev, [name]: value }));
-// 	};
-
-// 	const handleSave = async () => {
-// 		onSave(product);
-// 		onClose();
-// 	};
-
-// 	return (
-// 		<DialogContent>
-// 			<DialogHeader>
-// 				<DialogTitle>Create Product</DialogTitle>
-// 			</DialogHeader>
-// 			<div className="grid gap-4 py-4">
-// 				<div className="grid grid-cols-4 items-center gap-4">
-// 					<Label htmlFor="name" className="text-right">
-// 						Name
-// 					</Label>
-// 					<Input
-// 						id="name"
-// 						name="name"
-// 						value={product.name}
-// 						onChange={handleChange}
-// 						className="col-span-3"
-// 					/>
-// 				</div>
-// 				<div className="grid grid-cols-4 items-center gap-4">
-// 					<Label htmlFor="price" className="text-right">
-// 						Price
-// 					</Label>
-// 					<Input
-// 						id="price"
-// 						name="price"
-// 						type="number"
-// 						value={product.price}
-// 						onChange={handleChange}
-// 						className="col-span-3"
-// 					/>
-// 				</div>
-// 				<div className="grid grid-cols-4 items-center gap-4">
-// 					<Label htmlFor="discountedPrice" className="text-right">
-// 						Discounted Price
-// 					</Label>
-// 					<Input
-// 						id="discountedPrice"
-// 						name="discountedPrice"
-// 						type="number"
-// 						value={product.discountedPrice || ""}
-// 						onChange={handleChange}
-// 						className="col-span-3"
-// 					/>
-// 				</div>
-// 				<div className="grid grid-cols-4 items-center gap-4">
-// 					<Label htmlFor="stock" className="text-right">
-// 						Stock
-// 					</Label>
-// 					<Input
-// 						id="stock"
-// 						name="quantity"
-// 						type="number"
-// 						value={product.quantity}
-// 						onChange={handleChange}
-// 						className="col-span-3"
-// 					/>
-// 				</div>
-// 				<div className="grid grid-cols-4 items-center gap-4">
-// 					<Label htmlFor="description" className="text-right">
-// 						Description
-// 					</Label>
-// 					<Textarea
-// 						id="description"
-// 						name="description"
-// 						value={product.description}
-// 						onChange={handleChange}
-// 						className="col-span-3"
-// 					/>
-// 				</div>
-// 				{/* <div className="grid grid-cols-4 items-center gap-4">
-// 					<Label htmlFor="category" className="text-right">
-// 						Category
-// 					</Label>
-// 					<Select
-// 						value={product.category[0]}
-// 						onValueChange={(value) =>
-// 							setEditedProduct((prev) => ({
-// 								...prev,
-// 								categories: value,
-// 							}))
-// 						}>
-// 						<SelectTrigger className="col-span-3">
-// 							<SelectValue placeholder="Select a category" />
-// 						</SelectTrigger>
-// 						<SelectContent>
-// 							<SelectItem value="Category 1">
-// 								Category 1
-// 							</SelectItem>
-// 							<SelectItem value="Category 2">
-// 								Category 2
-// 							</SelectItem>
-// 							<SelectItem value="Category 3">
-// 								Category 3
-// 							</SelectItem>
-// 						</SelectContent>
-// 					</Select>
-// 				</div> */}
-// 				<div className="grid grid-cols-4 items-center gap-4">
-// 					<Label className="text-right">Available</Label>
-// 					<Switch
-// 						checked={product.isActive}
-// 						onCheckedChange={(checked) =>
-// 							setProduct((prev) => ({
-// 								...prev,
-// 								isActive: checked,
-// 							}))
-// 						}
-// 					/>
-// 				</div>
-// 				<div className="grid grid-cols-4 items-center gap-4">
-// 					<Label className="text-right">Images</Label>
-// 					<div className="col-span-3">
-// 						<FileUploader
-// 							id="images"
-// 							accept="image/*"
-// 							onFileSelect={(file) =>
-// 								setProduct((prev) => ({
-// 									...prev,
-// 									media: [
-// 										...prev.media,
-// 										// URL.createObjectURL(file),
-// 									],
-// 								}))
-// 							}
-// 						/>
-// 						<div className="mt-2 flex flex-wrap gap-2">
-// 							{product.media.map((image, index) => (
-// 								<Image
-// 									key={index}
-// 									src={image.url}
-// 									alt={`Product ${index + 1}`}
-// 									width={80}
-// 									unoptimized
-// 									height={80}
-// 									className="h-20 w-20 object-cover"
-// 								/>
-// 							))}
-// 						</div>
-// 					</div>
-// 				</div>
-// 			</div>
-// 			<div className="flex justify-end gap-2">
-// 				<Button onClick={onClose} variant="outline">
-// 					Cancel
-// 				</Button>
-// 				<Button onClick={handleSave}>Save Changes</Button>
-// 			</div>
-// 		</DialogContent>
-// 	);
-// };
-
 export default function ProductsPage() {
 	const [products, setProducts] = useState<IProduct[]>([]);
 	const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 	const [editingProduct, setEditingProduct] = useState<IProduct | null>(null);
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
-	// const [showCreateProductModal, setShowCreateProductModal] = useState(true);
-	const [categories, setCategories] = useState([]);
 
 	const filteredProducts = useMemo(() => {
 		const normalizedSearch = search.toLowerCase().trim();
@@ -528,16 +335,93 @@ export default function ProductsPage() {
 		);
 	}, [debouncedSearch, products]);
 
-	const handleEdit = (product: IProduct) => {
-		setEditingProduct(() => product);
+	const handleEdit = (product?: IProduct) => {
+		setEditingProduct(product || null);
+		setIsDialogOpen(true);
+	};
+
+	// Add a function to create a new product
+	const handleCreateProduct = async (newProduct: IProduct) => {
+		try {
+			// Assuming you have a createProduct function in your services
+			const response = await createProduct({
+				name: newProduct.name,
+				description: newProduct.description,
+				price: newProduct.price,
+				categories: newProduct.category.map((item) => item.name),
+				media: newProduct.media,
+				quantity: newProduct.quantity,
+				discountedPrice: isNaN(Number(newProduct.discountedPrice))
+					? null
+					: Number(newProduct.discountedPrice),
+				isActive: newProduct.isActive,
+			});
+
+			if (!response.success) throw new Error("Failed to create product.");
+
+			// Add the new product to the list
+			setProducts((prev) => [...prev, response.data.product]);
+			setEditingProduct(null);
+		} catch (error) {
+			console.error("Error creating product:", error);
+			// You might want to show an error message to the user
+		}
+	};
+
+	// Update the handleSaveEdit function to handle both editing and creating
+	const handleSaveEdit = async (updatedProduct: IProduct) => {
+		// If the product has no ID, it's a new product
+		if (!updatedProduct.id) {
+			await handleCreateProduct(updatedProduct);
+			return;
+		}
+
+		// Otherwise, update the existing product
+		const response = await updateProduct(updatedProduct.id, {
+			name: updatedProduct.name,
+			description: updatedProduct.description,
+			price: updatedProduct.price,
+			categories: updatedProduct.category.map((item) => item.name),
+			media: updatedProduct.media,
+			quantity: updatedProduct.quantity,
+			discountedPrice: isNaN(Number(updatedProduct.discountedPrice))
+				? undefined
+				: Number(updatedProduct.discountedPrice),
+			isActive: updatedProduct.isActive,
+		});
+
+		if (!response.success) throw new Error("Failed to update product.");
+
+		setProducts((prev) =>
+			prev.map((p) =>
+				p.id === updatedProduct.id ? response.data.product : p
+			)
+		);
+		setEditingProduct(null);
 	};
 
 	const handleRemoveImage = async (imageId: string) => {
-		// await deleteProductImage(imageId);
+		if (!editingProduct) return;
+
+		// For new products that haven't been saved yet
+		if (editingProduct && !editingProduct.id) {
+			setEditingProduct((prev) => {
+				if (!prev) return null;
+				return {
+					...prev,
+					media: prev.media.filter((img) => img.id !== imageId),
+				};
+			});
+			return;
+		}
+
+		// For existing products
 		setProducts((prev) => {
 			const product = prev.find((p) =>
 				p.media.find((img) => img.id === imageId)
 			);
+
+			if (!product) return prev;
 
 			return prev.map((prod) => {
 				if (prod.id === product.id) {
@@ -554,30 +438,12 @@ export default function ProductsPage() {
 		});
 	};
 
-	const handleSearch = debounce((term: string) => {
-		setDebouncedSearch(term);
-	}, 800);
-
-	const handleSaveEdit = async (updatedProduct: IProduct) => {
-		const response = await updateProduct(updatedProduct.id, {
-			name: updatedProduct.name,
-			description: updatedProduct.description,
-			price: updatedProduct.price,
-			categories: updatedProduct.category.map((item) => item.name),
-			media: updatedProduct.media,
-			quantity: updatedProduct.quantity,
-			discountedPrice: isNaN(Number(updatedProduct.discountedPrice))
-				? null
-				: Number(updatedProduct.discountedPrice),
-			isActive: updatedProduct.isActive,
-		});
-		if (!response.success) throw new Error("Failed to update product.");
-		setProducts((prev) =>
-			prev.map((p) =>
-				p.id === updatedProduct.id ? response.data.product : p
-			)
-		);
-		setEditingProduct(null);
+	const handleSearch = (term: string) => {
+		setSearch(term);
+		// Simple debounce implementation
+		setTimeout(() => {
+			setDebouncedSearch(term);
+		}, 300);
 	};
 
 	const handleDelete = async (id: string) => {
@@ -600,57 +466,19 @@ export default function ProductsPage() {
 		);
 	};
 
-	// const toggleInStore = (id: string) => {
-	// 	setProducts(
-	// 		products.map((product) =>
-	// 			product.id === id
-	// 				? { ...product, inStore: !product.store }
-	// 				: product
-	// 		)
-	// 	);
-	// };
-
-	const fetchCategories = async () => {
-		try {
-			const response = await getCategories(50, 1);
-			if (!response.success) throw new Error("Failed to get categories.");
-
-			setCategories(() => response.data.categories);
-		} catch (error) {
-			console.error("Error fetching categories:", error);
-		}
-	};
-
-	const fetchProducts = async ({
-		page = 1,
-		limit = 10,
-		featured,
-	}: {
-		page: number;
-		limit: number;
-		featured: boolean | undefined;
-	}) => {
-		try {
-			const response = await getUserProducts(limit, page, undefined);
-			if (!response.success) throw new Error("Failed to get products.");
-
-			return response.data.products;
-		} catch (error) {
-			console.error("Error fetching products:", error);
-		}
-	};
-
 	useEffect(() => {
-		(async () => {
-			const products = await fetchProducts({
-				page: 1,
-				limit: 10,
-				featured: undefined,
-			});
+		const loadProducts = async () => {
+			try {
+				const response = await getUserProducts(10, 1, undefined);
+				if (response.success) {
+					setProducts(response.data.products);
+				}
+			} catch (error) {
+				console.error("Error loading products:", error);
+			}
+		};
 
-			setProducts(() => products);
-			// setFilteredProducts(() => products);
-		})();
+		loadProducts();
 	}, []);
 
 	return (
@@ -664,9 +492,11 @@ export default function ProductsPage() {
 						disabled={selectedProducts.length === 0}>
 						<Trash className="mr-2 h-4 w-4" /> Delete Selected
 					</Button>
-					<Button>
-						<Plus onClick={() => {}} className="mr-2 h-4 w-4" /> Add
-						Product
+					<Button
+						onClick={() => {
+							handleEdit();
+						}}>
+						<Plus className="mr-2 h-4 w-4" /> Add Product
 					</Button>
 				</div>
 			</div>
@@ -675,7 +505,6 @@ export default function ProductsPage() {
 					placeholder="Search products..."
 					value={search}
 					onChange={(e) => {
-						setSearch(e.target.value);
 						handleSearch(e.target.value);
 					}}
 				/>
@@ -687,7 +516,8 @@ export default function ProductsPage() {
 						<TableHead className="w-[50px]">
 							<Checkbox
 								checked={
-									selectedProducts.length === products.length
+									selectedProducts.length ===
+										products.length && products.length > 0
 								}
 								onCheckedChange={(checked) => {
 									if (checked) {
@@ -705,66 +535,55 @@ export default function ProductsPage() {
 						<TableHead>Stock</TableHead>
 						<TableHead>Status</TableHead>
 						<TableHead>Category</TableHead>
-						{/* <TableHead>In Store</TableHead> */}
 						<TableHead className="text-right">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{filteredProducts.map((product) => (
-						<TableRow key={product.id}>
-							<TableCell>
-								<Checkbox
-									checked={selectedProducts.includes(
-										product.id
+					{filteredProducts.length > 0 ? (
+						filteredProducts.map((product) => (
+							<TableRow key={product.id}>
+								<TableCell>
+									<Checkbox
+										checked={selectedProducts.includes(
+											product.id
+										)}
+										onCheckedChange={() =>
+											toggleProductSelection(product.id)
+										}
+									/>
+								</TableCell>
+								<TableCell>{product.name}</TableCell>
+								<TableCell>
+									${product.price.toFixed(2)}
+									{product.discountedPrice !== null && (
+										<span className="ml-2 text-sm text-green-600">
+											${product.discountedPrice}
+										</span>
 									)}
-									onCheckedChange={() =>
-										toggleProductSelection(product.id)
-									}
-								/>
-							</TableCell>
-							<TableCell>{product.name}</TableCell>
-							<TableCell>
-								${product.price.toFixed(2)}
-								{product.discountedPrice !== null && (
-									<span className="ml-2 text-sm text-green-600">
-										${product.discountedPrice}
-									</span>
-								)}
-							</TableCell>
-							<TableCell>{product.quantity}</TableCell>
-							<TableCell>
-								{product.isActive ? (
-									<span className="text-green-600">
-										Available
-									</span>
-								) : (
-									<span className="text-red-600">
-										Unavailable
-									</span>
-								)}
-								{product.isBoosted && (
-									<span className="ml-2 text-blue-600">
-										Boosted
-									</span>
-								)}
-							</TableCell>
-							<TableCell>
-								{product.category.map((cate) => cate.name)}
-							</TableCell>
-							{/* <TableCell>
-								<Button
-									variant={
-										product.store ? "default" : "outline"
-									}
-									onClick={() => toggleInStore(product.id)}>
-									<Store className="mr-2 h-4 w-4" />
-									{product.store
-										? "Remove from Store"
-										: "Add to Store"}
-								</Button>
-							</TableCell> */}
-							<TableCell className="text-right">
-								<Dialog>
+								</TableCell>
+								<TableCell>{product.quantity}</TableCell>
+								<TableCell>
+									{product.isActive ? (
+										<span className="text-green-600">
+											Available
+										</span>
+									) : (
+										<span className="text-red-600">
+											Unavailable
+										</span>
+									)}
+									{product.isBoosted && (
+										<span className="ml-2 text-blue-600">
+											Boosted
+										</span>
+									)}
+								</TableCell>
+								<TableCell>
+									{product.category
+										.map((cate) => cate.name)
+										.join(", ")}
+								</TableCell>
+								<TableCell className="text-right">
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
 											<Button
@@ -777,15 +596,13 @@ export default function ProductsPage() {
 											<DropdownMenuLabel>
 												Actions
 											</DropdownMenuLabel>
-											<DialogTrigger asChild>
-												<DropdownMenuItem
-													onClick={() =>
-														handleEdit(product)
-													}>
-													<Edit className="mr-2 h-4 w-4" />
-													Edit
-												</DropdownMenuItem>
-											</DialogTrigger>
+											<DropdownMenuItem
+												onClick={() =>
+													handleEdit(product)
+												}>
+												<Edit className="mr-2 h-4 w-4" />
+												Edit
+											</DropdownMenuItem>
 											<DropdownMenuSeparator />
 											<DropdownMenuItem
 												onClick={() =>
@@ -797,34 +614,36 @@ export default function ProductsPage() {
 											</DropdownMenuItem>
 										</DropdownMenuContent>
 									</DropdownMenu>
-									{editingProduct && (
-										<EditProductModal
-											product={editingProduct}
-											onSave={handleSaveEdit}
-											onRemoveImage={handleRemoveImage}
-											onClose={() =>
-												setEditingProduct(null)
-											}
-										/>
-									)}
-
-									{/* <CreateProductModal
-										onClose={() =>
-											setShowCreateProductModal(
-												() => false
-											)
-										}
-										onSave={() => {}}
-									/> */}
-									{/* {showCreateProductModal && (
-									
-									)} */}
-								</Dialog>
+								</TableCell>
+							</TableRow>
+						))
+					) : (
+						<TableRow>
+							<TableCell colSpan={7} className="text-center py-4">
+								No products found. Add a new product to get
+								started.
 							</TableCell>
 						</TableRow>
-					))}
+					)}
 				</TableBody>
 			</Table>
+
+			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+				{isDialogOpen && (
+					<DialogPortal>
+						<EditProductModal
+							product={editingProduct}
+							isNew={!editingProduct}
+							onSave={handleSaveEdit}
+							onRemoveImage={handleRemoveImage}
+							onClose={() => {
+								setIsDialogOpen(false);
+								setEditingProduct(null);
+							}}
+						/>
+					</DialogPortal>
+				)}
+			</Dialog>
 		</div>
 	);
 }
@@ -838,28 +657,28 @@ interface IProduct {
 	boostedAt: Date;
 	boostExpiresAt: Date;
 	description: string;
-	discountedPrice: number;
-	reviews: [];
-	reports: [];
-	likes: [];
+	discountedPrice: number | null;
+	reviews: any[];
+	reports: any[];
+	likes: any[];
 	price: number;
-	payments: [];
+	payments: any[];
 	store?: {
 		id: string;
 		name: string;
-		description: "";
-		customUrl: null;
-		isActive: true;
-		isBoosted: true;
-		boostedAt: null;
-		boostExpiresAt: null;
+		description: string;
+		customUrl: string | null;
+		isActive: boolean;
+		isBoosted: boolean;
+		boostedAt: Date | null;
+		boostExpiresAt: Date | null;
 		ownerId: string;
 	};
 	media: {
 		id: string;
 		url: string;
-		type: "IMAGE";
-		public_id: any;
+		type: string;
+		public_id: string | File;
 		productId: string;
 		createdAt: Date;
 	}[];

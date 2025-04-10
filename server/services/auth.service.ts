@@ -66,6 +66,7 @@ class AuthService {
 			where: { email },
 			include: { store: true },
 		});
+
 		if (!user) throw new BadrequestError("Invalid login provided.");
 
 		if (user.isDeleted)

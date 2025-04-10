@@ -167,11 +167,11 @@ class ProductService {
 				public_id: string;
 			}[];
 
-			uploadedFiles.forEach((file) => {
-				optimizeUpload(file.public_id);
-				cropUpload(file.public_id);
-			});
-			console.log(uploadedFiles);
+			if (uploadedFiles)
+				uploadedFiles.forEach((file) => {
+					optimizeUpload(file.public_id);
+					cropUpload(file.public_id);
+				});
 
 			// Create the product
 			const product = await prisma.product.create({
@@ -180,27 +180,35 @@ class ProductService {
 					description: data.description,
 					quantity: Number(data.quantity),
 					price: Number(data.price),
-					discountedPrice: Number(data.discountedPrice),
-					media: {
-						createMany: {
-							data: uploadedFiles.map((file) => ({
-								url: file.url,
-								type:
-									file.resource_type === "image"
-										? "IMAGE"
-										: "VIDEO",
-								public_id: file.public_id,
-							})),
-						},
-					},
-					// addToStore: data.addToStore as Boolean,
-					isActive: false, //TODO: make it so it's toggleable upon creation.
+					discountedPrice:
+						data.discountedPrice == 0
+							? null
+							: Number(data.discountedPrice),
+					media: uploadedFiles
+						? {
+								createMany: {
+									data: uploadedFiles.map((file) => ({
+										url: file.url,
+										type:
+											file.resource_type === "image"
+												? "IMAGE"
+												: "VIDEO",
+										public_id: file.public_id,
+									})),
+								},
+						  }
+						: undefined,
+					isActive: data.isActive === "true" ? true : false,
 					ownerId: user.id,
 					category: data.categories
 						? {
 								connectOrCreate: categoryConnections,
 						  }
 						: undefined,
+				},
+				include: {
+					media: true,
+					category: true,
 				},
 			});
 
@@ -288,7 +296,10 @@ class ProductService {
 					name: data.name,
 					description: data.description,
 					price: Number(data.price),
-					discountedPrice: Number(data.discountedPrice),
+					discountedPrice:
+						data.discountedPrice == 0
+							? null
+							: Number(data.discountedPrice),
 					media:
 						files.length > 0
 							? {

@@ -1,11 +1,22 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../prisma";
 import { Req } from "../utils/types";
+import {
+	BadrequestError,
+	ForbiddenError,
+	NotFoundError,
+} from "../middlewears/error";
+import { upload } from "../middlewears/cloudinary";
 
 class StoreService {
-	getStores = async ({ limit, page, search, featured, active=true }: IGetStores) => {
-
-		const query: Prisma.StoreWhereInput = {}
+	getStores = async ({
+		limit,
+		page,
+		search,
+		featured,
+		active = true,
+	}: IGetStores) => {
+		const query: Prisma.StoreWhereInput = {};
 
 		if (search) {
 			query.OR = [
@@ -25,11 +36,11 @@ class StoreService {
 		}
 
 		if (featured) {
-			query["isBoosted"] = true
+			query["isBoosted"] = true;
 		}
 
 		if (active) {
-			query["isActive"] = active
+			query["isActive"] = active;
 		}
 
 		const stores = await prisma.store.findMany({
@@ -51,30 +62,104 @@ class StoreService {
 		return store;
 	};
 
-	createStore = async (data: any, user: Req["user"]) => {
-		const newStore = await prisma.store.create({
+	createStore = async (data: any, active_user: Req["user"]) => {
+		const user = await prisma.user.findUnique({
+			where: {
+				id: active_user.id,
+			},
+			select: {
+				store: true,
+				isVerified: true,
+			},
+		});
+
+		if (!user) throw new ForbiddenError("User not found.");
+		if (!user.isVerified)
+			throw new BadrequestError("User's email is not verified.");
+
+		if (user.store) {
+			throw new ForbiddenError("User already has a store.");
+		}
+
+		const newStore = await prisma.user.update({
+			where: {
+				id: active_user.id,
+			},
 			data: {
-				...data,
-				user: {
-					connect: {
-						id: user.id,
+				roles: {
+					push: "SELLER",
+				},
+				store: {
+					create: {
+						...data,
+						isActive: true,
 					},
 				},
+			},
+			select: {
+				store: true,
 			},
 		});
 
 		return newStore;
 	};
 
-	updateStore = async (id: string, store: any, user: Req["user"]) => {
-		const updatedStore = await prisma.store.update({
-			where: {
-				id,
-			},
-			data: store,
-		});
+	updateStore = async ({
+		id,
+		body,
+		user,
+		banner,
+	}: {
+		id: string;
+		body: any;
+		user: Req["user"];
+		banner?: Express.Multer.File;
+	}) => {
+		try {
+			const store = await prisma.store.findUnique({
+				where: {
+					id: id,
+				},
+			});
 
-		return updatedStore;
+			if (!store) throw new NotFoundError("Store not found.");
+			if (store.ownerId !== user.id) {
+				throw new ForbiddenError(
+					"Not authorized to update this store."
+				);
+			}
+
+			let bannerUrl: string | undefined;
+
+			if (banner) {
+				const item = await upload([banner]);
+				console.log(item);
+				bannerUrl = item![0].url;
+			}
+
+			const updatedStore = await prisma.store.update({
+				where: {
+					id,
+					ownerId: user.id,
+				},
+				data: {
+					...body,
+					banner: bannerUrl
+						? {
+								create: {
+									type: "IMAGE",
+									url: bannerUrl,
+								},
+						  }
+						: undefined,
+				},
+			});
+
+			return updatedStore;
+		} catch (error) {
+			// TODO: Handle error for not found
+			throw new BadrequestError("Failed to update store.");
+		}
 	};
 
 	deleteStore = async (id: string, user: Req["user"]) => {

@@ -70,6 +70,9 @@ class UserController {
 			.status(StatusCodes.OK)
 			.json({ success: true, data: { products } });
 	};
+
+	getUserStore = async (req: Req, res: Response) => {};
+	getUserReviews = async (req: Req, res: Response) => {};
 }
 
 export default UserController;

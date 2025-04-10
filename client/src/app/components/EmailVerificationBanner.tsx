@@ -37,7 +37,7 @@ export default function EmailVerificationBanner() {
 	if (!isVisible) return null;
 
 	return (
-		<div className="bg-yellow-50 border border-yellow-400 text-yellow-800 px-3 py-1 flex items-center justify-between rounded-md shadow-md w-full max-w-3xl mx-auto mt-4 fixed right-0 left-0">
+		<div className="bg-yellow-50 border border-yellow-400 text-yellow-800 px-3 py-1 flex items-center justify-between rounded-md shadow-md w-full max-w-3xl mx-auto mt-4 fixed z-50 right-0 left-0">
 			{emailSent ? (
 				<div className="flex items-center gap-2 text-green-700 text-sm">
 					<CheckCircle size={18} />

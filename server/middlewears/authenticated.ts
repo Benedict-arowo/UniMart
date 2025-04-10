@@ -8,7 +8,7 @@ const authService = new AuthService();
 
 const authenticatedOnly = (req: Req, res: Response, next: NextFunction) => {
 	try {
-		const access_token = req.cookies?.[CONFIG.env.ACCESS_TOKEN]; // Ensure cookies exist
+		const access_token = req.cookies?.[CONFIG.env.ACCESS_TOKEN];
 
 		if (!access_token) {
 			return next(
@@ -24,7 +24,7 @@ const authenticatedOnly = (req: Req, res: Response, next: NextFunction) => {
 			);
 		}
 
-		req["user"] = userData; // Attach the user data to the request object
+		req["user"] = userData;
 
 		next();
 	} catch (error) {

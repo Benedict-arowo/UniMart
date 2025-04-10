@@ -11,7 +11,20 @@ class UserService {
 				id: userId,
 			},
 			include: {
-				store: true,
+				store: {
+					select: {
+						id: true,
+						name: true,
+						description: true,
+						customUrl: true,
+						isActive: true,
+						isBoosted: true,
+						banner: true,
+						boostedAt: true,
+						boostExpiresAt: true,
+						_count: true,
+					},
+				},
 			},
 		});
 

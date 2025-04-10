@@ -183,6 +183,8 @@ export default function SocialMediaPage() {
 									<p>{post.content}</p>
 									{post.image && (
 										<Image
+											width={500}
+											height={500}
 											src={post.image}
 											alt="Post image"
 											className="mt-2 max-w-full h-auto"
@@ -212,6 +214,8 @@ export default function SocialMediaPage() {
 										<p>{post.content}</p>
 										{post.image && (
 											<Image
+												width={500}
+												height={500}
 												src={post.image}
 												alt="Post image"
 												className="mt-2 max-w-full h-auto"
@@ -242,6 +246,8 @@ export default function SocialMediaPage() {
 										<p>{post.content}</p>
 										{post.image && (
 											<Image
+												width={500}
+												height={500}
 												src={post.image}
 												alt="Post image"
 												className="mt-2 max-w-full h-auto"
@@ -272,6 +278,8 @@ export default function SocialMediaPage() {
 										<p>{post.content}</p>
 										{post.image && (
 											<Image
+												width={500}
+												height={500}
 												src={post.image}
 												alt="Post image"
 												className="mt-2 max-w-full h-auto"

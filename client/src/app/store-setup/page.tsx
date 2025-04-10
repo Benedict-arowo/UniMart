@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,31 +13,37 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { createStore } from "@/services/store";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function StoreSetupPage() {
 	const [storeName, setStoreName] = useState("");
 	const [storeDescription, setStoreDescription] = useState("");
-	const [themeId, setThemeId] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState("");
 	const router = useRouter();
+	const { user } = useAuth();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		// Here you would typically send a request to your API to create the store
-		console.log("Store setup attempt with:", {
-			storeName,
-			storeDescription,
-			themeId,
-		});
-		// If store setup is successful, redirect to the store dashboard or homepage
-		router.push("/dashboard");
+		setError("");
+		setLoading(true);
+
+		try {
+			await createStore(storeName, storeDescription);
+			router.push("/dashboard/store");
+		} catch (err: any) {
+			setError(err.message || "Something went wrong.");
+		} finally {
+			setLoading(false);
+		}
 	};
+
+	useEffect(() => {
+		if (user && user.store) {
+			router.replace("/dashboard/store");
+		}
+	}, [user]);
 
 	return (
 		<div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -77,30 +83,19 @@ export default function StoreSetupPage() {
 									required
 								/>
 							</div>
-							<div className="flex flex-col space-y-1.5">
-								<Label htmlFor="theme">Choose a Theme</Label>
-								<Select
-									value={themeId}
-									onValueChange={setThemeId}>
-									<SelectTrigger>
-										<SelectValue placeholder="Select a theme" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="theme1">
-											Modern
-										</SelectItem>
-										<SelectItem value="theme2">
-											Classic
-										</SelectItem>
-										<SelectItem value="theme3">
-											Minimalist
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
+
+							{error && (
+								<p className="text-red-600 text-center text-sm">
+									{error}
+								</p>
+							)}
 						</div>
-						<Button className="w-full mt-6" type="submit">
-							Create Store
+
+						<Button
+							className="w-full mt-6"
+							type="submit"
+							disabled={loading}>
+							{loading ? "Creating..." : "Create Store"}
 						</Button>
 					</form>
 				</CardContent>

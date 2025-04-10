@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -12,22 +12,44 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
+import { createReview } from "@/services/review";
+import { toast } from "@/hooks/use-toast";
+import { Review } from "../product/[id]/page";
 
 interface SellerRatingProps {
-	sellerId: string;
+	productId: string;
 	sellerName: string;
+	updateReviews: Dispatch<SetStateAction<Review[]>>;
 }
 
-export function SellerRating({ sellerId, sellerName }: SellerRatingProps) {
+export function SellerRating({
+	productId,
+	sellerName,
+	updateReviews,
+}: SellerRatingProps) {
 	const [rating, setRating] = useState(0);
 	const [comment, setComment] = useState("");
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		// In a real app, you'd send this rating to an API
-		console.log(
-			`Rating for seller ${sellerId}: ${rating} stars, comment: ${comment}`
-		);
+
+		if (comment.trim().length < 3) {
+			toast({
+				variant: "destructive",
+				title: "Comment too short",
+				description: "Please enter at least 3 characters.",
+			});
+			return;
+		}
+
+		const response = await createReview(productId, comment, rating);
+		updateReviews((prev) => [...prev, response.data.review]);
+
+		toast({
+			title: "Review submitted!",
+			description: "Thanks for rating the seller.",
+		});
+
 		// Reset form
 		setRating(0);
 		setComment("");
@@ -46,7 +68,7 @@ export function SellerRating({ sellerId, sellerName }: SellerRatingProps) {
 					{[1, 2, 3, 4, 5].map((star) => (
 						<Star
 							key={star}
-							className={`w-6 h-6 cursor-pointer ${
+							className={`w-6 h-6 cursor-pointer transition ${
 								star <= rating
 									? "text-yellow-400 fill-current"
 									: "text-gray-300"
@@ -62,7 +84,9 @@ export function SellerRating({ sellerId, sellerName }: SellerRatingProps) {
 				/>
 			</CardContent>
 			<CardFooter>
-				<Button onClick={handleSubmit} disabled={rating === 0}>
+				<Button
+					onClick={handleSubmit}
+					disabled={comment.length < 3 && rating !== 0}>
 					Submit Rating
 				</Button>
 			</CardFooter>

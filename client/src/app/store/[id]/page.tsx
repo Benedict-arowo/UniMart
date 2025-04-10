@@ -5,6 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { ProductCard } from "@/app/components/ProductCard";
 import Image from "next/image";
+import { getStore } from "@/services/store";
+
+// Skeleton loader component
+const SkeletonLoader = () => (
+	<div className="animate-pulse">
+		<div className="bg-gray-200 h-[300px] rounded-lg mb-6"></div>
+		<div className="space-y-2">
+			<div className="bg-gray-200 h-8 w-1/4 rounded"></div>
+			<div className="bg-gray-200 h-6 w-1/2 rounded"></div>
+			<div className="bg-gray-200 h-12 w-full rounded"></div>
+		</div>
+	</div>
+);
 
 interface Product {
 	id: number;
@@ -21,56 +34,35 @@ interface Store {
 	bannerImage: string;
 }
 
-// Mock data for demonstration
-const store: Store = {
-	id: 1,
-	name: "John's Textbook Emporium",
-	description: "Your one-stop shop for all your textbook needs!",
-	bannerImage: "/images/banner-placeholder.svg",
-};
-
-const products: Product[] = [
-	{
-		id: 1,
-		name: "Introduction to Computer Science",
-		price: 50,
-		discountedPrice: 40,
-		image: "/images/placeholder.svg",
-	},
-	{
-		id: 2,
-		name: "Calculus I",
-		price: 45,
-		image: "/images/placeholder.svg",
-	},
-	{
-		id: 3,
-		name: "Introduction to Psychology",
-		price: 40,
-		discountedPrice: 35,
-		image: "/images/placeholder.svg",
-	},
-	{
-		id: 4,
-		name: "World History",
-		price: 55,
-		image: "/images/placeholder.svg",
-	},
-];
-
 export default function StorePage({ params }: { params: { id: string } }) {
-	const [storeData, _setStoreData] = useState<Store>(store);
-	const [storeProducts, _setStoreProducts] = useState<Product[]>(products);
+	const [storeData, setStoreData] = useState<Store | null>(null);
+	const [storeProducts, setStoreProducts] = useState<Product[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
 
 	useEffect(() => {
-		// In a real app, you'd fetch the store data and products from an API here
-		// using the params.id
+		// Fetch the store data and products when the component mounts
+		const getStoreData = async () => {
+			const data = await getStore(params.id);
+			setStoreData(data.store);
+			console.log(data.store);
+			// setStoreProducts(data.products);
+		};
+
+		getStoreData();
 	}, [params.id]);
 
 	const filteredProducts = storeProducts.filter((product) =>
 		product.name.toLowerCase().includes(searchTerm.toLowerCase())
 	);
+
+	if (!storeData) {
+		// Show skeleton loader while fetching data
+		return (
+			<div className="container mx-auto p-6">
+				<SkeletonLoader />
+			</div>
+		);
+	}
 
 	return (
 		<div>
