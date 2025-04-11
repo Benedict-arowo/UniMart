@@ -9,6 +9,7 @@ const controller = new StoreController();
 
 router.get("/", Wrapper(controller.getStores));
 router.get("/:id", Wrapper(controller.getStore));
+router.get("/products/:id", Wrapper(controller.getUserStoreProducts));
 router.post("/", authenticatedOnly, Wrapper(controller.createStore));
 router.patch(
 	"/:id",

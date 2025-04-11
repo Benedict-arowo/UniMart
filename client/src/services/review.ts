@@ -23,6 +23,29 @@ export const getReviews = async (
 	}
 };
 
+export const getUserReviews = async (
+	userId: string,
+	limit: number = 10,
+	page: number = 1,
+	recent: boolean = false
+) => {
+	try {
+		const response = await API.get(`/user/reviews/${userId}`, {
+			params: { limit, page, recent: recent ? "true" : "false" },
+		});
+
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			"Error fetching reviews:",
+			error?.response?.data?.message || "Unknown error"
+		);
+		throw new Error(
+			error.response?.data?.message || "Failed to fetch reviews."
+		);
+	}
+};
+
 export const createReview = async (
 	productId: string,
 	content: string,

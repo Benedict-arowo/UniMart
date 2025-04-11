@@ -1,16 +1,16 @@
 import API from "@/middlewear/axios";
 
-export const getActiveAds = async () => {
+export const getChats = async () => {
 	try {
-		const response = await API.get("/ads/active");
+		const response = await API.get(`/chat`);
 		return response.data;
 	} catch (error: any) {
 		console.error(
-			"Error fetching ads:",
+			"Error fetching chats:",
 			error?.response?.data?.message || "Unknown error"
 		);
 		throw new Error(
-			error.response?.data?.message || "Failed to fetch ads."
+			error.response?.data?.message || "Failed to fetch chats."
 		);
 	}
 };

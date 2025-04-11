@@ -33,7 +33,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { FileUploader } from "@/components/FileUploader";
-import { MoreHorizontal, Plus, Trash, Edit, Trash2 } from "lucide-react";
+import {
+	MoreHorizontal,
+	Plus,
+	Trash,
+	Edit,
+	Trash2,
+	ArrowDownToDot,
+} from "lucide-react";
 import Image from "next/image";
 import { getUserProducts } from "@/services/user";
 import {
@@ -400,6 +407,10 @@ export default function ProductsPage() {
 		setEditingProduct(null);
 	};
 
+	const addToStore = (product) => {
+		console.log(product);
+	};
+
 	const handleRemoveImage = async (imageId: string) => {
 		if (!editingProduct) return;
 
@@ -602,6 +613,13 @@ export default function ProductsPage() {
 												}>
 												<Edit className="mr-2 h-4 w-4" />
 												Edit
+											</DropdownMenuItem>
+											<DropdownMenuItem
+												onClick={() =>
+													addToStore(product)
+												}>
+												<ArrowDownToDot />
+												Add to Store
 											</DropdownMenuItem>
 											<DropdownMenuSeparator />
 											<DropdownMenuItem

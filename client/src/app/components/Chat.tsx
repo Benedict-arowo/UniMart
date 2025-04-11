@@ -24,7 +24,7 @@ export function Chat() {
 		sendMessage,
 		setActiveConversation,
 	} = useChat();
-	const { user } = useAuth()
+	const { user } = useAuth();
 	const [newMessage, setNewMessage] = useState("");
 
 	const handleSendMessage = (e: React.FormEvent) => {

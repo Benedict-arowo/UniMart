@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { ProductCard } from "@/app/components/ProductCard";
 import Image from "next/image";
-import { getStore } from "@/services/store";
+import { getStore, getStoreProducts } from "@/services/store";
+import { useRouter } from "next/navigation";
 
 // Skeleton loader component
 const SkeletonLoader = () => (
@@ -28,24 +29,43 @@ interface Product {
 }
 
 interface Store {
-	id: number;
-	name: string;
-	description: string;
-	bannerImage: string;
+	id: "a14a22c3-7f8d-4efc-aba6-cc4177127935";
+	name: "GirlsVen";
+	description: "The best place for your shoes, and clothes!";
+	customUrl: null;
+	isActive: true;
+	isBoosted: null;
+	boostedAt: null;
+	boostExpiresAt: null;
+	ownerId: "7f02db15-c18b-4365-8895-9dbfd45b7889";
+	banner: {
+		id: "8301ee90-5a05-4062-8453-ee2af11bafda";
+		type: "IMAGE";
+		url: "https://res.cloudinary.com/dctbkswpr/image/upload/v1744296694/uploads/products/bcvhwesati3aukshidms.png";
+		createdAt: "2025-04-10T14:51:35.801Z";
+	};
 }
 
 export default function StorePage({ params }: { params: { id: string } }) {
 	const [storeData, setStoreData] = useState<Store | null>(null);
 	const [storeProducts, setStoreProducts] = useState<Product[]>([]);
 	const [searchTerm, setSearchTerm] = useState("");
+	const router = useRouter();
 
 	useEffect(() => {
 		// Fetch the store data and products when the component mounts
 		const getStoreData = async () => {
-			const data = await getStore(params.id);
+			const { data } = await getStore(params.id);
+			const {
+				data: { products },
+			} = await getStoreProducts(params.id, 10, 1, "", undefined);
+
+			if (!data.store) {
+				router.replace("/404");
+			}
+
 			setStoreData(data.store);
-			console.log(data.store);
-			// setStoreProducts(data.products);
+			setStoreProducts(products);
 		};
 
 		getStoreData();
@@ -56,7 +76,6 @@ export default function StorePage({ params }: { params: { id: string } }) {
 	);
 
 	if (!storeData) {
-		// Show skeleton loader while fetching data
 		return (
 			<div className="container mx-auto p-6">
 				<SkeletonLoader />
@@ -68,8 +87,9 @@ export default function StorePage({ params }: { params: { id: string } }) {
 		<div>
 			<header className="relative">
 				<Image
-					src={storeData.bannerImage}
+					src={storeData.banner?.url}
 					alt={storeData.name}
+					unoptimized
 					fill
 					className="w-full h-[300px] object-cover"
 				/>
@@ -100,6 +120,11 @@ export default function StorePage({ params }: { params: { id: string } }) {
 						<ProductCard key={product.id} product={product} />
 					))}
 				</div>
+				{filteredProducts.length === 0 && (
+					<p className="mt-3 text-center text-gray-500">
+						There are currently no products in this store.
+					</p>
+				)}
 			</main>
 		</div>
 	);

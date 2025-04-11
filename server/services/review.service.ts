@@ -11,7 +11,6 @@ class ReviewService {
 		if (recent) {
 			return prisma.review.findMany({
 				where: { productId },
-				// include: { createdBy: true },
 				include: {
 					reviewer: {
 						select: {

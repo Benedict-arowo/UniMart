@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { Req } from "../utils/types";
 import { StatusCodes } from "http-status-codes";
 import UserService from "../services/user.service";
@@ -72,7 +72,24 @@ class UserController {
 	};
 
 	getUserStore = async (req: Req, res: Response) => {};
-	getUserReviews = async (req: Req, res: Response) => {};
+	getReviews = async (req: Request, res: Response) => {
+		const { id: userId } = req.params;
+		let { page = 1, limit = 10, recent } = req.query;
+
+		page = isNaN(Number(page)) ? 1 : Number(page);
+		limit = isNaN(Number(limit)) ? 10 : Number(limit);
+
+		const reviews = await this.service.getReviews(
+			userId,
+			Number(page),
+			Number(limit),
+			recent === "true"
+		);
+
+		return res
+			.status(StatusCodes.OK)
+			.json({ success: true, data: { reviews } });
+	};
 }
 
 export default UserController;

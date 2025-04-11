@@ -45,6 +45,16 @@ class StoreService {
 
 		const stores = await prisma.store.findMany({
 			where: query,
+			include: {
+				banner: {
+					select: {
+						id: true,
+						type: true,
+						url: true,
+						createdAt: true,
+					},
+				},
+			},
 			take: limit,
 			skip: (page - 1) * limit,
 		});
@@ -56,6 +66,16 @@ class StoreService {
 		const store = await prisma.store.findUnique({
 			where: {
 				id,
+			},
+			include: {
+				banner: {
+					select: {
+						id: true,
+						type: true,
+						url: true,
+						createdAt: true,
+					},
+				},
 			},
 		});
 
@@ -168,6 +188,74 @@ class StoreService {
 				id,
 			},
 		});
+	};
+
+	getStoreProducts = async (
+		storeId: string,
+		limit: number,
+		page: number,
+		search?: string,
+		featured?: Boolean
+		// active?: Boolean
+	) => {
+		let query: Prisma.ProductWhereInput = {
+			storeId,
+			isActive: true,
+		};
+
+		if (featured) {
+			query["isBoosted"] = true;
+		}
+
+		// if (active) {
+		// 	query["isActive"] = true;
+		// }
+
+		if (search) {
+			query["OR"] = [
+				{
+					name: {
+						mode: "insensitive",
+						contains: search,
+					},
+				},
+				{
+					description: {
+						mode: "insensitive",
+						contains: search,
+					},
+				},
+				{
+					category: {
+						some: {
+							name: {
+								mode: "insensitive",
+								contains: search,
+							},
+						},
+					},
+				},
+				{
+					store: {
+						name: {
+							mode: "insensitive",
+							contains: search,
+						},
+					},
+				},
+			];
+		}
+
+		const products = await prisma.product.findMany({
+			where: query,
+			take: limit,
+			skip: (page - 1) * limit,
+			include: {
+				media: true,
+				category: true,
+			},
+		});
+		return products;
 	};
 }
 

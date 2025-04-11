@@ -11,7 +11,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Heart,
 	MessageCircle,
@@ -24,7 +23,6 @@ import { ProductCard } from "@/app/components/ProductCard";
 import { SellerRating } from "@/app/components/SellerRating";
 import { AdSpot } from "@/app/components/ads/AdSpot";
 import { getProduct, getSimilarProducts } from "@/services/product";
-import { useRouter } from "next/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
@@ -35,6 +33,8 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { getReviews } from "@/services/review";
+import { useRouter } from "next/navigation";
+// import { useRouter } from "next/router";
 export interface Product {
 	id: string;
 	name: string;
@@ -252,7 +252,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 		}
 	};
 
-	const handleChatWithSeller = () => {
+	const handleChatWithSeller = (id: string) => {
 		// Simulate first contact time
 		if (!localStorage.getItem(`contactTime_${product.ownerId}`)) {
 			localStorage.setItem(
@@ -260,6 +260,11 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 				Date.now().toString()
 			);
 		}
+
+		// router.push({
+		// 	pathname: "/messages",
+		// 	query: { state: JSON.stringify({ ownerId: id}) },
+		// });
 		// Here you would typically open the chat with the seller
 		console.log("Chat with seller:", product.ownerId);
 	};
@@ -389,7 +394,9 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 					<CardFooter className="flex flex-col space-y-2">
 						<Button
 							className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-							onClick={handleChatWithSeller}>
+							onClick={() =>
+								handleChatWithSeller(product.ownerId)
+							}>
 							<MessageCircle className="mr-2" size={20} />
 							Chat with Seller
 						</Button>

@@ -30,6 +30,7 @@ const env = cleanEnv(process.env, {
 	CLOUDINARY_API_SECRET: str(),
 	PAYSTACK_SECRET_KEY: str(),
 	PAYSTACK_BASE_URL: str(),
+	MESSAGE_EDIT_LIMIT: num({ default: 5 }), // In minutes
 });
 
 const CONFIG = {

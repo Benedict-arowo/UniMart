@@ -278,6 +278,7 @@ model Chat {
   isArchived   Boolean   @default(false)
   deletedAt    DateTime?
   createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
 }
 
 model Message {
@@ -285,10 +286,13 @@ model Message {
   content   String
   type      MessageType @default(TEXT)
   sender    User        @relation(fields: [senderId], references: [id], name: "UserMessages")
-  chat      Chat        @relation(fields: [chatId], references: [id], name: "ChatMessages")
+  chat      Chat        @relation(fields: [chatId], references: [id], name: "ChatMessages", onDelete: Cascade)
   isRead    Boolean     @default(false) // Track if the message has been read
 
   isDeleted Boolean     @default(false)
+  deletedAt DateTime?    
+  isEdited  Boolean     @default(false)
+  editedAt DateTime?
   createdAt DateTime    @default(now())
 
   senderId String

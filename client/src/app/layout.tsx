@@ -8,6 +8,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import EmailVerificationBanner from "./components/EmailVerificationBanner";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import { Toaster } from "@/components/ui/toaster";
+import { SocketProvider } from "@/contexts/SocketContext";
+import { ChatProvider } from "@/contexts/ChatContext";
 
 const inter = Inter({
 	subsets: ["latin"],
@@ -29,16 +31,20 @@ export default function RootLayout({
 		<html lang="en">
 			<body className={inter.className}>
 				<AuthProvider>
-					<WishlistProvider>
-						<Header />
-						<Toaster />
-						<main className="min-h-screen">
-							<EmailVerificationBanner />
-							{children}
-						</main>
-						<Footer />
-						<Chat />
-					</WishlistProvider>
+					<SocketProvider>
+						<ChatProvider>
+							<WishlistProvider>
+								<Header />
+								<Toaster />
+								<main className="min-h-screen">
+									<EmailVerificationBanner />
+									{children}
+								</main>
+								<Footer />
+								<Chat />
+							</WishlistProvider>
+						</ChatProvider>
+					</SocketProvider>
 				</AuthProvider>
 			</body>
 		</html>

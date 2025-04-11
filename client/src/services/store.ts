@@ -54,6 +54,35 @@ export const getStore = async (id: string) => {
 	}
 };
 
+export const getStoreProducts = async (
+	storeId: string,
+	limit: number = 10,
+	page: number = 1,
+	search = "",
+	featured = undefined
+) => {
+	try {
+		const response = await API.get(`/stores/products/${storeId}`, {
+			params: {
+				limit,
+				page,
+				search: search.length > 0 ? search : undefined,
+				featured: featured ? featured : undefined,
+			},
+		});
+
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			"Error fetching store products:",
+			error?.response?.data?.message || "Unknown error"
+		);
+		throw new Error(
+			error.response?.data?.message || "Failed to fetch store products."
+		);
+	}
+};
+
 export const createStore = async (name: string, description: string) => {
 	try {
 		const response = await API.post(`/stores`, { name, description });

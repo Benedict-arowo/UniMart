@@ -71,7 +71,7 @@ export default function StorePage() {
 				name: user.store.name,
 				description: user.store.description,
 				banner:
-					user.store.banner.url || "/images/banner-placeholder.svg",
+					user.store.banner?.url || "/images/banner-placeholder.svg",
 			};
 			setStoreSettings(settingsFromUser);
 			setOriginalSettings(settingsFromUser);

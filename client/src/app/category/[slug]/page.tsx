@@ -65,7 +65,7 @@ export default function CategoryPage({ params }: { params: { slug: string } }) {
 			</div>
 			{!isLoading && categoryItems.length == 0 && (
 				<p className="text-center w-full text-gray-500">
-					There are currently no comments here.
+					There are currently no products here.
 				</p>
 			)}
 

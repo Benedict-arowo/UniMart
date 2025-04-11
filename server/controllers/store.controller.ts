@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import validator from "../middlewears/validator";
 import { Req } from "../utils/types";
-import { Response } from "express";
+import { Request, Response } from "express";
 import StoreService from "../services/store.service";
 import {
 	createStoreSchema,
@@ -66,6 +66,25 @@ class StoreController {
 	deleteStore = async (req: Req, res: Response) => {
 		await this.service.deleteStore(req.params.id, req.user);
 		return res.status(StatusCodes.NO_CONTENT).send();
+	};
+
+	getUserStoreProducts = async (req: Request, res: Response) => {
+		const {
+			query: { limit = 10, page = 1, search, featured },
+			params: { id: storeId },
+		} = req;
+
+		const products = await this.service.getStoreProducts(
+			storeId,
+			isNaN(Number(limit)) ? 10 : Number(limit),
+			isNaN(Number(page)) ? 1 : Number(page),
+			search as string | undefined,
+			featured ? (featured === "true" ? true : false) : undefined
+		);
+
+		return res
+			.status(StatusCodes.OK)
+			.json({ success: true, data: { products } });
 	};
 }
 

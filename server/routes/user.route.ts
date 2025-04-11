@@ -11,6 +11,7 @@ router.get("/products", authenticatedOnly, Wrapper(controller.getUserProducts));
 router.get("/store", authenticatedOnly, Wrapper(controller.getUserStore));
 router.get("/:id", Wrapper(controller.getUser));
 router.get("/products/:userId", Wrapper(controller.getOtherUserProducts));
+router.get("/reviews/:id", Wrapper(controller.getReviews));
 
 export default {
 	routeUrl: "user",

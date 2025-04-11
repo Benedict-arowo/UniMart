@@ -32,7 +32,8 @@ API.interceptors.response.use(
 		if (
 			error.response?.status === 401 &&
 			requestUrl !== "/user" &&
-			requestUrl !== "/wishlist"
+			requestUrl !== "/wishlist" &&
+			requestUrl !== "/chat"
 		) {
 			console.error("Unauthorized! Redirecting to login...");
 			window.location.href = "/login";

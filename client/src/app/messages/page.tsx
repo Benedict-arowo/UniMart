@@ -18,6 +18,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { useSocket } from "@/contexts/SocketContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Vendor {
 	id: string;
@@ -30,7 +32,7 @@ interface Vendor {
 // Mock vendors data - in a real app, this would come from an API
 const vendors: Vendor[] = [
 	{
-		id: "1",
+		id: "7f02db15-c18b-4365-8895-9dbfd45b7889",
 		name: "John's Bookstore",
 		avatar: "/images/placeholder.svg",
 		store: "Academic Books Hub",
@@ -59,32 +61,25 @@ export default function MessagesPage() {
 		messages,
 		sendMessage,
 		setActiveConversation,
+		isLoading,
 	} = useChat();
 	const [newMessage, setNewMessage] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
-	const [isLoading, setIsLoading] = useState(true);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [availableVendors, _setAvailableVendors] =
 		useState<Vendor[]>(vendors);
+	const { user } = useAuth();
 
-	useEffect(() => {
-		// Simulate loading delay
-		const timer = setTimeout(() => {
-			setIsLoading(false);
-		}, 1500);
-
-		return () => clearTimeout(timer);
-	}, []);
-
+	const socket = useSocket();
 	useEffect(() => {
 		// Scroll to bottom of messages when new message is added
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [messages]);
 
-	const handleSendMessage = (e: React.FormEvent) => {
+	const handleSendMessage = (e: React.FormEvent, chatId: string) => {
 		e.preventDefault();
 		if (newMessage.trim()) {
-			sendMessage(newMessage.trim());
+			sendMessage(newMessage.trim(), chatId);
 			setNewMessage("");
 		}
 	};
@@ -95,8 +90,32 @@ export default function MessagesPage() {
 			vendor.store.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
-	const startNewConversation = (vendorId: string) => {
-		setActiveConversation(vendorId);
+	const startNewConversation = async (vendorId: string) => {
+		// const chat = await startChat(vendorId, user.id);
+		socket.emit("join", vendorId, (response: any) => {
+			if (response.success) {
+				setActiveConversation({
+					...response.chat,
+					messages: response.chat.messages.map((m) => {
+						return {
+							...m,
+							isRead: true,
+						};
+					}),
+				});
+				console.log({
+					...response.chat,
+					messages: response.chat.messages.map((m) => {
+						return {
+							...m,
+							isRead: true,
+						};
+					}),
+				});
+			} else {
+				throw new Erorr("Something went wrong");
+			}
+		});
 	};
 
 	if (isLoading) {
@@ -199,49 +218,70 @@ export default function MessagesPage() {
 							</Dialog>
 						</div>
 						<div className="space-y-2">
-							{conversations.map((conv) => (
-								<div
-									key={conv.id}
-									className={`flex items-center gap-4 p-2 rounded-lg cursor-pointer hover:bg-accent ${
-										activeConversation === conv.id
-											? "bg-accent"
-											: ""
-									}`}
-									onClick={() =>
-										setActiveConversation(conv.id)
-									}>
-									<Avatar>
-										<AvatarImage
-											src="/images/placeholder.svg"
-											alt={conv.participantName}
-										/>
-										<AvatarFallback>
-											{conv.participantName[0]}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex-1 min-w-0">
-										<div className="flex justify-between items-start">
-											<p className="font-medium truncate">
-												{conv.participantName}
+							{conversations.map((conv) => {
+								console.log(conv);
+
+								return (
+									<div
+										key={conv.id}
+										className={`flex items-center gap-4 p-2 rounded-lg cursor-pointer hover:bg-accent ${
+											activeConversation &&
+											activeConversation.id === conv.id
+												? "bg-accent"
+												: ""
+										}`}
+										onClick={() =>
+											startNewConversation(
+												conv.participants.find(
+													(p) => p.id !== user.id
+												).id
+											)
+										}>
+										<Avatar>
+											<AvatarImage
+												src="/images/placeholder.svg"
+												alt={
+													conv.participants[0]
+														.username
+												}
+											/>
+											<AvatarFallback>
+												{conv.participants[0].username}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex-1 min-w-0">
+											<div className="flex justify-between items-start">
+												<p className="font-medium truncate">
+													{
+														conv.participants[0]
+															.username
+													}
+												</p>
+												{conv.messages.filter(
+													(m) => !m.isRead
+												).length > 0 && (
+													<span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+														{
+															conv.messages.filter(
+																(m) => !m.isRead
+															).length
+														}
+													</span>
+												)}
+											</div>
+											<p className="text-sm text-muted-foreground truncate">
+												{conv.messages[0].content}
 											</p>
-											{conv.unreadCount > 0 && (
-												<span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
-													{conv.unreadCount}
-												</span>
-											)}
 										</div>
-										<p className="text-sm text-muted-foreground truncate">
-											{conv.lastMessage}
-										</p>
 									</div>
-								</div>
-							))}
+								);
+							})}
 						</div>
 					</div>
 				</div>
 
 				{/* Chat Area */}
-				<div className="border rounded-lg flex flex-col">
+				<div className="border rounded-lg flex flex-col h-full overflow-scroll">
 					{activeConversation ? (
 						<>
 							{/* Chat Header */}
@@ -254,8 +294,8 @@ export default function MessagesPage() {
 												conversations.find(
 													(conv) =>
 														conv.id ===
-														activeConversation
-												)?.participantName ||
+														activeConversation.id
+												)?.participants[0].username ||
 												"Conversation"
 											}
 										/>
@@ -264,8 +304,8 @@ export default function MessagesPage() {
 												conversations.find(
 													(conv) =>
 														conv.id ===
-														activeConversation
-												)?.participantName[0]
+														activeConversation.id
+												)?.participants[0].username
 											}
 										</AvatarFallback>
 									</Avatar>
@@ -275,8 +315,8 @@ export default function MessagesPage() {
 												conversations.find(
 													(conv) =>
 														conv.id ===
-														activeConversation
-												)?.participantName
+														activeConversation.id
+												)?.participants[0].username
 											}
 										</h2>
 										<p className="text-sm text-muted-foreground">
@@ -287,34 +327,40 @@ export default function MessagesPage() {
 							</div>
 
 							{/* Messages */}
-							<ScrollArea className="flex-1 p-4">
+							<ScrollArea className="flex-1 p-4 ">
 								<div className="space-y-4">
-									{messages.map((message) => (
-										<div
-											key={message.id}
-											className={`flex ${
-												message.senderId === "1"
-													? "justify-end"
-													: "justify-start"
-											}`}>
+									{activeConversation.messages.map(
+										(message) => (
 											<div
-												className={`max-w-[70%] rounded-lg p-3 ${
-													message.senderId === "1"
-														? "bg-primary text-primary-foreground"
-														: "bg-muted text-muted-foreground"
+												key={message.id}
+												className={`flex ${
+													message.senderId === user.id
+														? "justify-end"
+														: "justify-start"
 												}`}>
-												<p>{message.content}</p>
-												<p className="text-xs mt-1 opacity-70">
-													{new Date(
-														message.timestamp
-													).toLocaleTimeString([], {
-														hour: "2-digit",
-														minute: "2-digit",
-													})}
-												</p>
+												<div
+													className={`max-w-[70%] rounded-lg p-3 ${
+														message.senderId ===
+														user.id
+															? "bg-primary text-primary-foreground"
+															: "bg-muted text-muted-foreground"
+													}`}>
+													<p>{message.content}</p>
+													<p className="text-xs mt-1 opacity-70">
+														{new Date(
+															message.createdAt
+														).toLocaleTimeString(
+															[],
+															{
+																hour: "2-digit",
+																minute: "2-digit",
+															}
+														)}
+													</p>
+												</div>
 											</div>
-										</div>
-									))}
+										)
+									)}
 									<div ref={messagesEndRef} />
 								</div>
 							</ScrollArea>
@@ -322,7 +368,12 @@ export default function MessagesPage() {
 							{/* Message Input */}
 							<div className="p-4 border-t">
 								<form
-									onSubmit={handleSendMessage}
+									onSubmit={(e) =>
+										handleSendMessage(
+											e,
+											activeConversation.id
+										)
+									}
 									className="flex gap-2">
 									<Input
 										type="text"

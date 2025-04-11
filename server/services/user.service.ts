@@ -113,6 +113,62 @@ class UserService {
 
 		return products;
 	};
+
+	async getReviews(
+		userId: string,
+		page: number,
+		limit: number,
+		recent: boolean
+	) {
+		if (recent) {
+			return prisma.review.findMany({
+				where: {
+					product: {
+						ownerId: userId,
+					},
+				},
+				include: {
+					reviewer: {
+						select: {
+							id: true,
+							username: true,
+							email: true,
+							lastOnline: true,
+							isOnline: true,
+							isVerified: true,
+							createdAt: true,
+						},
+					},
+				},
+				orderBy: { createdAt: "desc" },
+				take: limit,
+			});
+		}
+
+		return prisma.review.findMany({
+			where: {
+				product: {
+					ownerId: userId,
+				},
+			},
+			include: {
+				reviewer: {
+					select: {
+						id: true,
+						username: true,
+						email: true,
+						lastOnline: true,
+						isOnline: true,
+						isVerified: true,
+						createdAt: true,
+					},
+				},
+			},
+			orderBy: { createdAt: "desc" },
+			skip: (page - 1) * limit,
+			take: limit,
+		});
+	}
 }
 
 export default UserService;
