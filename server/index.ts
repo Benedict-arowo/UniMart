@@ -12,10 +12,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
 	cors: {
-		origin: [
-			"http://localhost:3000",
-			"https://market-place-remake.vercel.app/",
-		],
+		origin: "https://market-place-remake.vercel.app",
 		methods: ["GET", "POST"],
 		credentials: true,
 	},
@@ -28,10 +25,7 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(
 	cors({
-		origin: [
-			"http://localhost:3000",
-			"https://market-place-remake.vercel.app/",
-		],
+		origin: "https://market-place-remake.vercel.app",
 		credentials: true,
 	})
 );
