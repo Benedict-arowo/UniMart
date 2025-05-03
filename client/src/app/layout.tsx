@@ -41,7 +41,7 @@ export default function RootLayout({
 									{children}
 								</main>
 								<Footer />
-								<Chat />
+								{/* <Chat /> */}
 							</WishlistProvider>
 						</ChatProvider>
 					</SocketProvider>

@@ -2,6 +2,7 @@ import { DefaultEventsMap, Server } from "socket.io";
 import { authenticateSockets } from "../authenticated";
 import ChatService from "../../services/chat.service";
 import { Sock } from "../../utils/types";
+import prisma from "../../prisma";
 
 const useSocket = (
 	io: Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>
@@ -9,18 +10,24 @@ const useSocket = (
 	const chatService = new ChatService();
 
 	io.use(authenticateSockets);
-	io.on("connection", (socket: Sock) => {
+	io.on("connection", async (socket: Sock) => {
 		console.log("a user connected");
+		await prisma.user.update({
+			where: { id: socket.user.id },
+			data: {
+				isOnline: true,
+			},
+		});
+		console.log(socket.user);
 
 		socket.on("join", async (participantId, callback) => {
-			console.log(participantId, socket.user);
 			const chat = await chatService.startChat(
 				socket.user["id"],
 				participantId
 			);
 
-			console.log(chat);
-			socket.join(chat.id); // Join the room with chatId
+			console.log(chat.id);
+			socket.join(chat.id);
 			callback({ success: true, chat: chat });
 		});
 
@@ -31,17 +38,18 @@ const useSocket = (
 				message
 			);
 
-			socket.to(message.chatId).emit("message", newMessage);
+			socket.to(chatId).emit("message", newMessage);
 			callback({ success: true, message: newMessage });
 		});
 
-		socket.on("disconnect", () => {
+		socket.on("disconnect", async () => {
+			await prisma.user.update({
+				where: { id: socket.user.id },
+				data: {
+					isOnline: false,
+				},
+			});
 			console.log("user disconnected");
-		});
-
-		socket.on("message", (msg) => {
-			console.log("message: " + msg);
-			io.emit("message", msg); // Broadcast the message to all connected clients
 		});
 	});
 };

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSocket } from "@/contexts/SocketContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "next/navigation";
 
 interface Vendor {
 	id: string;
@@ -58,8 +59,8 @@ export default function MessagesPage() {
 	const {
 		conversations,
 		activeConversation,
-		messages,
 		sendMessage,
+		setConversations,
 		setActiveConversation,
 		isLoading,
 	} = useChat();
@@ -69,12 +70,15 @@ export default function MessagesPage() {
 	const [availableVendors, _setAvailableVendors] =
 		useState<Vendor[]>(vendors);
 	const { user } = useAuth();
+	const searchParams = useSearchParams();
+
+	const vendorId = searchParams.get("vendorId");
 
 	const socket = useSocket();
-	useEffect(() => {
-		// Scroll to bottom of messages when new message is added
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messages]);
+	// useEffect(() => {
+	// 	// Scroll to bottom of messages when new message is added
+	// 	messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	// }, [activeConversation]);
 
 	const handleSendMessage = (e: React.FormEvent, chatId: string) => {
 		e.preventDefault();
@@ -92,6 +96,7 @@ export default function MessagesPage() {
 
 	const startNewConversation = async (vendorId: string) => {
 		// const chat = await startChat(vendorId, user.id);
+		if (!socket) return;
 		socket.emit("join", vendorId, (response: any) => {
 			if (response.success) {
 				setActiveConversation({
@@ -103,20 +108,37 @@ export default function MessagesPage() {
 						};
 					}),
 				});
-				console.log({
-					...response.chat,
-					messages: response.chat.messages.map((m) => {
-						return {
-							...m,
-							isRead: true,
-						};
-					}),
-				});
+
+				if (
+					conversations.find((conv) => conv.id === response.chat.id)
+				) {
+					setConversations((prev) => {
+						return prev.map((chat) =>
+							chat.id === response.chat.id
+								? {
+										...chat,
+										messages: chat.messages.map((msg) => ({
+											...msg,
+											isRead: true,
+										})),
+								  }
+								: chat
+						);
+					});
+				} else {
+					setConversations((prev) => [response.chat, ...prev]);
+				}
 			} else {
-				throw new Erorr("Something went wrong");
+				throw new Error("Something went wrong");
 			}
 		});
 	};
+
+	useEffect(() => {
+		if (vendorId) {
+			startNewConversation(vendorId);
+		}
+	}, [vendorId]);
 
 	if (isLoading) {
 		return (
@@ -218,64 +240,66 @@ export default function MessagesPage() {
 							</Dialog>
 						</div>
 						<div className="space-y-2">
-							{conversations.map((conv) => {
-								console.log(conv);
-
-								return (
-									<div
-										key={conv.id}
-										className={`flex items-center gap-4 p-2 rounded-lg cursor-pointer hover:bg-accent ${
-											activeConversation &&
-											activeConversation.id === conv.id
-												? "bg-accent"
-												: ""
-										}`}
-										onClick={() =>
-											startNewConversation(
-												conv.participants.find(
-													(p) => p.id !== user.id
-												).id
-											)
-										}>
-										<Avatar>
-											<AvatarImage
-												src="/images/placeholder.svg"
-												alt={
-													conv.participants[0]
-														.username
-												}
-											/>
-											<AvatarFallback>
-												{conv.participants[0].username}
-											</AvatarFallback>
-										</Avatar>
-										<div className="flex-1 min-w-0">
-											<div className="flex justify-between items-start">
-												<p className="font-medium truncate">
+							{user &&
+								conversations.map((conv) => {
+									const otherUser = conv.participants.find(
+										(participant) =>
+											participant.id !== user.id
+									);
+									return (
+										<div
+											key={conv.id}
+											className={`flex items-center gap-4 p-2 rounded-lg cursor-pointer hover:bg-accent ${
+												activeConversation &&
+												activeConversation.id ===
+													conv.id
+													? "bg-accent"
+													: ""
+											}`}
+											onClick={() =>
+												startNewConversation(
+													otherUser.id
+												)
+											}>
+											<Avatar>
+												<AvatarImage
+													src="/images/placeholder.svg"
+													alt={otherUser.username}
+												/>
+												<AvatarFallback>
+													{otherUser.username}
+												</AvatarFallback>
+											</Avatar>
+											<div className="flex-1 min-w-0">
+												<div className="flex justify-between items-start">
+													<p className="font-medium truncate">
+														{otherUser.username}
+													</p>
+													{conv.messages.filter(
+														(m) => !m.isRead
+													).length > 0 && (
+														<span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
+															{
+																conv.messages.filter(
+																	(m) =>
+																		!m.isRead
+																).length
+															}
+														</span>
+													)}
+												</div>
+												<p className="text-sm text-muted-foreground truncate">
 													{
-														conv.participants[0]
-															.username
+														conv?.messages[
+															conv.messages
+																.length - 1
+														]?.content
 													}
 												</p>
-												{conv.messages.filter(
-													(m) => !m.isRead
-												).length > 0 && (
-													<span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full">
-														{
-															conv.messages.filter(
-																(m) => !m.isRead
-															).length
-														}
-													</span>
-												)}
 											</div>
-											<p className="text-sm text-muted-foreground truncate">
-												{conv.messages[0].content}
-											</p>
 										</div>
-									</div>
-								);
-							})}
+									);
+								})}
 						</div>
 					</div>
 				</div>
@@ -283,113 +307,114 @@ export default function MessagesPage() {
 				{/* Chat Area */}
 				<div className="border rounded-lg flex flex-col h-full overflow-scroll">
 					{activeConversation ? (
-						<>
-							{/* Chat Header */}
-							<div className="p-4 border-b">
-								<div className="flex items-center gap-4">
-									<Avatar>
-										<AvatarImage
-											src="/images/placeholder.svg"
-											alt={
-												conversations.find(
-													(conv) =>
-														conv.id ===
-														activeConversation.id
-												)?.participants[0].username ||
-												"Conversation"
-											}
-										/>
-										<AvatarFallback>
-											{
-												conversations.find(
-													(conv) =>
-														conv.id ===
-														activeConversation.id
-												)?.participants[0].username
-											}
-										</AvatarFallback>
-									</Avatar>
-									<div>
-										<h2 className="font-medium">
-											{
-												conversations.find(
-													(conv) =>
-														conv.id ===
-														activeConversation.id
-												)?.participants[0].username
-											}
-										</h2>
-										<p className="text-sm text-muted-foreground">
-											Online
-										</p>
-									</div>
-								</div>
-							</div>
-
-							{/* Messages */}
-							<ScrollArea className="flex-1 p-4 ">
-								<div className="space-y-4">
-									{activeConversation.messages.map(
-										(message) => (
-											<div
-												key={message.id}
-												className={`flex ${
-													message.senderId === user.id
-														? "justify-end"
-														: "justify-start"
-												}`}>
-												<div
-													className={`max-w-[70%] rounded-lg p-3 ${
-														message.senderId ===
-														user.id
-															? "bg-primary text-primary-foreground"
-															: "bg-muted text-muted-foreground"
-													}`}>
-													<p>{message.content}</p>
-													<p className="text-xs mt-1 opacity-70">
-														{new Date(
-															message.createdAt
-														).toLocaleTimeString(
-															[],
-															{
-																hour: "2-digit",
-																minute: "2-digit",
-															}
-														)}
-													</p>
-												</div>
+						(() => {
+							const otherUser =
+								activeConversation.participants.find(
+									(participant) => participant.id !== user.id
+								);
+							return (
+								<>
+									{/* Chat Header */}
+									<div className="p-4 border-b">
+										<div className="flex items-center gap-4">
+											<Avatar>
+												<AvatarImage
+													src="/images/placeholder.svg"
+													alt={
+														otherUser.username ||
+														"Conversation"
+													}
+												/>
+												<AvatarFallback>
+													{otherUser.username}
+												</AvatarFallback>
+											</Avatar>
+											<div>
+												<h2 className="font-medium">
+													{otherUser.username}
+												</h2>
+												<p className="text-sm text-muted-foreground">
+													{otherUser.isOnline
+														? "Online"
+														: "Offline"}
+												</p>
 											</div>
-										)
-									)}
-									<div ref={messagesEndRef} />
-								</div>
-							</ScrollArea>
+										</div>
+									</div>
 
-							{/* Message Input */}
-							<div className="p-4 border-t">
-								<form
-									onSubmit={(e) =>
-										handleSendMessage(
-											e,
-											activeConversation.id
-										)
-									}
-									className="flex gap-2">
-									<Input
-										type="text"
-										placeholder="Type a message..."
-										value={newMessage}
-										onChange={(e) =>
-											setNewMessage(e.target.value)
-										}
-										className="flex-1"
-									/>
-									<Button type="submit">
-										<Send className="h-4 w-4" />
-									</Button>
-								</form>
-							</div>
-						</>
+									{/* Messages */}
+									<ScrollArea className="flex-1 p-4 ">
+										<div className="space-y-4">
+											{activeConversation.messages.map(
+												(message) => (
+													<div
+														key={message.id}
+														className={`flex ${
+															message.senderId ===
+															user.id
+																? "justify-end"
+																: "justify-start"
+														}`}>
+														<div
+															className={`max-w-[70%] rounded-lg p-3 ${
+																message.senderId ===
+																user.id
+																	? "bg-primary text-primary-foreground"
+																	: "bg-muted text-muted-foreground"
+															}`}>
+															<p>
+																{
+																	message.content
+																}
+															</p>
+															<p className="text-xs mt-1 opacity-70">
+																{new Date(
+																	message.createdAt
+																).toLocaleTimeString(
+																	[],
+																	{
+																		hour: "2-digit",
+																		minute: "2-digit",
+																	}
+																)}
+															</p>
+														</div>
+													</div>
+												)
+											)}
+											<div ref={messagesEndRef} />
+										</div>
+									</ScrollArea>
+
+									{/* Message Input */}
+									<div className="p-4 border-t">
+										<form
+											onSubmit={(e) =>
+												handleSendMessage(
+													e,
+													activeConversation.id
+												)
+											}
+											className="flex gap-2">
+											<Input
+												type="text"
+												placeholder="Type a message..."
+												value={newMessage}
+												onChange={(e) =>
+													setNewMessage(
+														e.target.value
+													)
+												}
+												className="flex-1"
+											/>
+											<Button type="submit">
+												<Send className="h-4 w-4" />
+											</Button>
+										</form>
+									</div>
+								</>
+							);
+						})()
 					) : (
 						<div className="flex-1 flex items-center justify-center">
 							<div className="text-center">

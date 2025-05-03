@@ -27,6 +27,7 @@ class AuthController {
 
 	login = Wrapper(async (req: Request, res: Response) => {
 		validate(req.body, loginSchema);
+		console.log(req.body);
 
 		const { access_token, refresh_token, user } =
 			await this.service.loginUser(req.body);

@@ -5,14 +5,6 @@ import type React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { useSocket } from "./SocketContext";
 
-interface Message {
-	id: number;
-	senderId: string;
-	receiverId: string;
-	content: string;
-	timestamp: Date;
-}
-
 interface Conversation {
 	id: "55ccf82e-fc2f-47bd-9705-cbcff533b1e7";
 	isArchived: false;
@@ -48,7 +40,7 @@ interface Conversation {
 interface ChatContextType {
 	conversations: Conversation[];
 	activeConversation: Conversation | null;
-	messages: Message[];
+	setConversations: React.Dispatch<React.SetStateAction<Conversation[]>>;
 	sendMessage: (content: string, chatId: string) => void;
 	setActiveConversation: React.Dispatch<React.SetStateAction<Conversation>>;
 	isLoading: boolean;
@@ -61,7 +53,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 	const [activeConversation, setActiveConversation] =
 		useState<Conversation | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
-	const [messages, setMessages] = useState<Message[]>([]);
+	// const [messages, setMessages] = useState<Message[]>([]);
 	const socket = useSocket();
 
 	useEffect(() => {
@@ -75,38 +67,98 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	useEffect(() => {
-		if (activeConversation) {
-			// Fetch messages for active conversation
-			// This is a mock implementation
-			setMessages([
-				{
-					id: 1,
-					senderId: "1",
-					receiverId: "2",
-					content: "Hi there!",
-					timestamp: new Date(),
-				},
-				{
-					id: 2,
-					senderId: "2",
-					receiverId: "1",
-					content: "Hello!",
-					timestamp: new Date(),
-				},
-			]);
-		}
+		console.log(activeConversation);
 	}, [activeConversation]);
 
+	// useEffect(() => {
+	// 	if (!socket) return;
+	// 	socket.on("message", (data) => {
+	// 		if (data.chatId) {
+	// 			// setConversations((prev) => {
+	// 			// 	return prev.filter((chat) => {
+	// 			// 		if (chat.id === data.chatId) {
+	// 			// 			return {
+	// 			// 				...chat,
+	// 			// 				messages: {
+	// 			// 					...chat.messages,
+	// 			// 					data,
+	// 			// 				},
+	// 			// 			};
+	// 			// 		}
+	// 			// 		return chat;
+	// 			// 	});
+	// 			// });
+	// 			setConversations((prev) =>
+	// 				prev.map((chat) =>
+	// 					chat.id === data.chatId
+	// 						? { ...chat, messages: [...chat.messages, data] }
+	// 						: chat
+	// 				)
+	// 			);
+
+	// 			if (activeConversation?.id === data.chatId) {
+	// 				setActiveConversation((prev) =>
+	// 					prev
+	// 						? { ...prev, messages: [...prev.messages, data] }
+	// 						: null
+	// 				);
+	// 			}
+	// 			// if (
+	// 			// 	activeConversation &&
+	// 			// 	data.chatId === activeConversation.id
+	// 			// ) {
+	// 			// 	setActiveConversation((prev) => {
+	// 			// 		return {
+	// 			// 			...prev,
+	// 			// 			messages: {
+	// 			// 				...prev.messages,
+	// 			// 				data,
+	// 			// 			},
+	// 			// 		};
+	// 			// 	});
+	// 			// }
+	// 		}
+	// 		console.log(activeConversation, data);
+	// 	});
+	// }, [socket]);
+
+	useEffect(() => {
+		if (!socket) return;
+		const messageHandler = (data) => {
+			if (data.chatId) {
+				setConversations((prev) =>
+					prev.map((chat) =>
+						chat.id === data.chatId
+							? {
+									...chat,
+									messages: [
+										...chat.messages,
+										data.chatId === activeConversation.id
+											? { ...data, isRead: true }
+											: data,
+									],
+							  }
+							: chat
+					)
+				);
+
+				if (activeConversation?.id === data.chatId) {
+					setActiveConversation((prev) =>
+						prev
+							? { ...prev, messages: [...prev.messages, data] }
+							: null
+					);
+				}
+				console.log(activeConversation, data);
+			}
+		};
+
+		socket.on("message", messageHandler);
+		// Cleanup when component unmounts or dependencies change:
+		return () => socket.off("message", messageHandler);
+	}, [socket, activeConversation]); // Now the callback is re-registered whenever activeConversation updates
+
 	const sendMessage = (content: string, chatId: string) => {
-		// const newMessage: Message = {
-		// 	id: messages.length + 1,
-		// 	senderId: "1", // Assuming current user id is '1'
-		// 	receiverId: activeConversation,
-		// 	content,
-		// 	timestamp: new Date(),
-		// };
-		// setMessages([...messages, newMessage]);
-		// In a real app, you'd send this message to your backend here
 		if (!content || !chatId) return;
 		socket.emit("message", content, chatId, (response: any) => {
 			console.log(response);
@@ -141,8 +193,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 		<ChatContext.Provider
 			value={{
 				conversations,
+				setConversations,
 				activeConversation,
-				messages,
 				sendMessage,
 				setActiveConversation,
 				isLoading,

@@ -111,7 +111,6 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 	const [newComment, setNewComment] = useState("");
 	const [recentlyViewedProducts, setRecentlyViewedProducts] = useState([]);
 	const [showRating, setShowRating] = useState(false);
-	const router = useRouter();
 	const {
 		wishlist,
 		isLoading: wishlistIsLoading,
@@ -120,6 +119,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 	} = useWishlist();
 	const [isWishlisted, setIsWishlisted] = useState(false);
 	const { user } = useAuth();
+	const router = useRouter();
 
 	useEffect(() => {
 		setIsWishlisted(() =>
@@ -261,10 +261,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 			);
 		}
 
-		// router.push({
-		// 	pathname: "/messages",
-		// 	query: { state: JSON.stringify({ ownerId: id}) },
-		// });
+		router.push(`/messages?vendorId=${id}`);
 		// Here you would typically open the chat with the seller
 		console.log("Chat with seller:", product.ownerId);
 	};
@@ -392,14 +389,16 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 						<p className="text-gray-700">{product.description}</p>
 					</CardContent>
 					<CardFooter className="flex flex-col space-y-2">
-						<Button
-							className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-							onClick={() =>
-								handleChatWithSeller(product.ownerId)
-							}>
-							<MessageCircle className="mr-2" size={20} />
-							Chat with Seller
-						</Button>
+						{user && product.ownerId !== user.id && (
+							<Button
+								className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+								onClick={() =>
+									handleChatWithSeller(product.ownerId)
+								}>
+								<MessageCircle className="mr-2" size={20} />
+								Chat with Seller
+							</Button>
+						)}
 						{user && (
 							<Button
 								onClick={() =>
@@ -470,7 +469,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 							<CardHeader className="flex flex-row justify-between items-start gap-4">
 								<div>
 									<CardTitle className="text-base font-semibold">
-										{review.userId || "Anonymous"}
+										{review.reviewer.username ||
+											"Anonymous"}
 									</CardTitle>
 									<CardDescription className="text-sm text-muted-foreground">
 										{format(new Date(review.createdAt))}

@@ -116,12 +116,16 @@ export default function Header() {
 										<MessageCircle className="mr-2 h-4 w-4" />
 										<span>Messages</span>
 									</DropdownMenuItem>
-									<DropdownMenuItem
-										className="cursor-pointer"
-										onClick={() => Navigate("/dashboard")}>
-										<BadgeDollarSign className="mr-2 h-4 w-4" />
-										<span>Dashboard</span>
-									</DropdownMenuItem>
+									{user.roles.includes("SELLER") && (
+										<DropdownMenuItem
+											className="cursor-pointer"
+											onClick={() =>
+												Navigate("/dashboard")
+											}>
+											<BadgeDollarSign className="mr-2 h-4 w-4" />
+											<span>Dashboard</span>
+										</DropdownMenuItem>
+									)}
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
 										onClick={logout}

@@ -134,7 +134,7 @@ export function UserProfile({ user }: { user: User }) {
 							</Badge>
 						) : (
 							<Badge className="bg-gray-500 text-white">
-								Last {format(user.lastOnline)} seen ago
+								{user.isOnline ? "Online" : "Offline"}
 							</Badge>
 						)}
 					</div>

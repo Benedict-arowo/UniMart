@@ -67,7 +67,6 @@ export const authenticateSockets = (socket: Sock, next: Function) => {
 			);
 		}
 
-		console.log("Authenticated socket user:", userData);
 		socket["user"] = userData;
 
 		next();

@@ -72,6 +72,17 @@ class ChatService {
 		});
 
 		if (existingChat) {
+			await prisma.message.updateMany({
+				where: {
+					chatId: existingChat.id,
+					isRead: false,
+				},
+				data: {
+					isRead: true,
+				},
+				limit: 50,
+			});
+
 			return existingChat;
 		}
 
